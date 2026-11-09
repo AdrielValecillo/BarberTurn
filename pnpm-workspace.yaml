@@ -1,0 +1,9 @@
+packages:
+  - apps/web
+  - packages/*
+
+# pnpm bloquea los scripts de instalación por defecto; solo se permiten los necesarios.
+allowBuilds:
+  supabase: true # descarga el binario de la CLI
+  sharp: false
+  unrs-resolver: false

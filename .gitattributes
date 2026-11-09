@@ -1,0 +1,2 @@
+# Todo en LF: el Makefile y los scripts fallan con CRLF, y Railway/CI corren en Linux.
+* text=auto eol=lf

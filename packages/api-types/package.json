@@ -1,0 +1,17 @@
+{
+  "name": "@turnero/api-types",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Tipos generados desde el OpenAPI de la API. No editar a mano: make gen-types.",
+  "exports": {
+    ".": {
+      "types": "./src/schema.d.ts"
+    }
+  },
+  "scripts": {
+    "generate": "openapi-typescript openapi.json -o src/schema.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0"
+  }
+}

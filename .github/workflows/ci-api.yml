@@ -1,0 +1,38 @@
+name: CI API
+
+on:
+  pull_request:
+    paths: [apps/api/**, supabase/**, packages/**, .github/workflows/ci-api.yml]
+  push:
+    branches: [main]
+    paths: [apps/api/**, supabase/**, packages/**, .github/workflows/ci-api.yml]
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run mypy app
+      - run: uv run lint-imports
+      - run: uv run pytest
+      # Obliga a regenerar los tipos de la web en el mismo cambio (make gen-types).
+      - name: openapi.json al día
+        run: |
+          uv run python -m app.export_openapi ../../packages/api-types/openapi.json
+          git diff --exit-code -- ../../packages/api-types/openapi.json
+
+  base-de-datos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+      - run: supabase start
+      - run: supabase test db

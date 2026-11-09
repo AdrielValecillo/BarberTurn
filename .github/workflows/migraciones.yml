@@ -1,0 +1,19 @@
+name: Migraciones (producción)
+
+# Manual. Configura el environment "produccion" con revisores requeridos para que un
+# humano apruebe cada ejecución.
+on:
+  workflow_dispatch:
+
+jobs:
+  migrar:
+    runs-on: ubuntu-latest
+    environment: produccion
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+      - run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
+      - run: supabase db push

@@ -1,0 +1,23 @@
+name: CI Web
+
+on:
+  pull_request:
+    paths: [apps/web/**, packages/**, pnpm-lock.yaml, .github/workflows/ci-web.yml]
+  push:
+    branches: [main]
+    paths: [apps/web/**, packages/**, pnpm-lock.yaml, .github/workflows/ci-web.yml]
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4 # toma la versión de "packageManager" en package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web lint
+      - run: pnpm --filter web test
+      - run: pnpm --filter web build # también verifica los tipos

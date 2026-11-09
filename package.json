@@ -1,0 +1,9 @@
+{
+  "name": "turnero",
+  "private": true,
+  "packageManager": "pnpm@12.11.2",
+  "description": "Turnero: reservas y recordatorios por WhatsApp para barberías",
+  "devDependencies": {
+    "supabase": "^3.0.0"
+  }
+}
