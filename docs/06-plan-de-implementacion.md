@@ -15,6 +15,8 @@
 - Los pasos están en el **orden sugerido**. Las pruebas se escriben junto al código que prueban (RNF-16), no al final de la fase.
 - No hay fechas: es un solo desarrollador y las estimaciones se hacen al abrir cada fase.
 - Al terminar un paso, anota una línea en la [bitácora](#bitácora) del final.
+- Un paso a medias lleva una línea ***Avance*** con lo hecho y lo que falta. Se borra al marcarlo.
+- La sección [Estado actual y siguiente paso](#estado-actual-y-siguiente-paso) es lo primero que se lee al retomar el trabajo. Se actualiza en el mismo cambio que cierra o avanza un paso.
 
 ### Reglas para dar un paso por terminado
 
@@ -26,13 +28,74 @@
 
 ---
 
+## Estado actual y siguiente paso
+
+*Actualizado: 14 de noviembre de 2026.*
+
+### Qué existe hoy
+
+| Parte | Estado |
+|---|---|
+| Base de datos | Esquema, seed y pruebas pgTAP verificados en PostgreSQL 16, **no** en Supabase local (F0.05). |
+| API | Solo el esqueleto: `/health`, bus de eventos y contexto RLS. **Ningún endpoint de negocio.** Los 5 dominios están vacíos. |
+| Web | Las pantallas del diseño (`front-interface/`) están construidas con **datos de demostración**: reserva en 4 pasos, confirmación, agenda del día y detalle de cita. Ver el *Avance* de F1.12, F1.13, F2.12 y F2.13. |
+| Sesión del panel | No existe. `/panel/*` se abre sin iniciar sesión. |
+| CI | Nunca se ha ejecutado (F0.03). |
+| Ramas | `feat/f1-12-pantallas-del-diseno` está subida y sin PR. Abrir el PR también sirve para F0.03. |
+
+### Cómo está conectada la web a los datos
+
+Las pantallas solo llaman a las funciones de `apps/web/domains/agenda/api.ts` y `apps/web/domains/notificaciones/api.ts`. Hoy esas funciones devuelven lo que arma `domains/agenda/demo.ts` (y una lista fija de avisos).
+
+Para conectar un endpoint:
+
+1. Créalo en la API y corre `make gen-types`.
+2. Cambia **solo** la función correspondiente de `api.ts` para que use `api` de `lib/api-client.ts`. No cambies su firma ni sus tipos; si el contrato tiene que cambiar, ajusta también las pantallas que la usan.
+3. Borra de `demo.ts` lo que dejó de usarse. Cuando quede vacío, borra el archivo y el comentario `shortcut:` de `api.ts`.
+
+El contrato que esperan las pantallas está en los tipos de `api.ts`. Hay dos puntos fáciles de pasar por alto:
+
+- `Turno.barberoId`: con "El primero disponible" la API debe decir, en cada turno, qué barbero lo atiende (RN-05). La web lo pasa a la URL del paso 4.
+- `Barbero.proximoTurno`: `GET /public/barberias/{slug}` debe devolver el próximo turno de cada barbero (F1.01).
+
+Las búsquedas de `shortcut:` en `apps/web` listan cada atajo pendiente.
+
+### Siguientes pasos, en orden
+
+Es el camino crítico para que un cliente reserve de verdad. Los pasos 1 a 3 no necesitan Docker.
+
+1. **Abrir el PR** de `feat/f1-12-pantallas-del-diseno` y corregir la CI hasta que pase (**F0.03**).
+2. **F1.02** (teléfono y clientes) y **F1.03** (reglas puras de la agenda): lógica pura con pruebas de tabla.
+3. **F0.07**: errores de dominio (el 409 de turno ocupado), logs y `conftest.py`.
+4. **F0.05**: levantar Supabase local. **Necesita Docker en ejecución.**
+5. **F1.01** y **F1.04**: conectar los pasos 1 a 3 de la reserva.
+6. **F1.05** y **F1.06**: conectar el paso 4 y los errores 9a, 9b y 9c (ver el *Avance* de F1.12).
+7. **F1.08**: el `.ics` (el botón de la confirmación ya apunta a esa ruta). Luego **F1.07** y **F1.14**: gestión con el token.
+8. **F1.09** y **F1.15**: aislamiento de `/public/*` y E2E con Playwright. **Cierran F1.**
+
+En paralelo, cuando haga falta el panel real: **F0.08**, **F0.10** y **F0.14** (sesión), y después **F2.01** a **F2.03** para conectar la agenda y el detalle.
+
+### Preguntas abiertas para el autor
+
+No las resuelvas por tu cuenta: pregunta antes de implementar lo que dependa de ellas.
+
+- **Consentimiento de datos (RF-06):** el paso 4 dice "Al confirmar aceptas la política de tratamiento de datos". ¿Basta ese texto o tiene que ser una casilla? ¿Dónde se publica la política?
+- **Login del panel (F0.10):** cómo evitar que el inicio de sesión cree usuarios nuevos sin revelar qué correos existen.
+- **Ritmo del worker:** cada minuto (CU-13, doc 03) o cada 5 minutos (doc 04 §5.2). Lo necesita F3.05.
+- **Despliegue de la web en Railway:** con la carpeta raíz `apps/web` no ve `packages/api-types` (F0.13).
+- **Doc 04:** sobra un fragmento de tabla duplicado (líneas ~103–116).
+- **P-01 y P-02** (nombre comercial y ADR-0007): F0.12.
+- **`front-interface/`:** ¿se versiona el PDF del diseño (1,8 MB) o se queda fuera del repositorio?
+
+---
+
 ## Resumen de fases
 
 | Fase | Contenido | Listo cuando (doc 00 §10) | Estado |
 |---|---|---|---|
 | **F0 · Base** | Repo, entornos, esquema de base de datos, autenticación del personal, trámite con Meta iniciado. | Migración aplicada; un dueño puede iniciar sesión. | En curso |
-| **F1 · Reservas** | Página pública, cálculo de disponibilidad, creación de citas, enlace de gestión. | Un cliente reserva, reagenda y cancela sin errores; no hay doble reserva posible. | Pendiente |
-| **F2 · Panel** | Agenda, detalle de cita, acciones, citas manuales, bloqueos, configuración. | Un barbero maneja un día completo solo desde el panel. | Pendiente |
+| **F1 · Reservas** | Página pública, cálculo de disponibilidad, creación de citas, enlace de gestión. | Un cliente reserva, reagenda y cancela sin errores; no hay doble reserva posible. | En curso (web con datos de demostración) |
+| **F2 · Panel** | Agenda, detalle de cita, acciones, citas manuales, bloqueos, configuración. | Un barbero maneja un día completo solo desde el panel. | Pendiente (agenda y detalle maquetados) |
 | **F3 · WhatsApp** | Plantillas, envío programado, webhook, avisos al barbero. | Ciclo completo de recordatorios con el número real. | Pendiente |
 | **F4 · Piloto** | 2–3 barberías en vivo, monitoreo y ajustes. | 4 semanas de uso continuo. | Pendiente |
 
@@ -137,10 +200,13 @@ F0 ──► F1 ──► F2 ──┐
   *Cubre:* RNF-02, RNF-03 · *Listo cuando:* se usan en la reserva y se pueden operar con teclado.
 - [ ] **F1.12 · Reserva en 4 pasos** — rutas `/b/[slug]` → `barbero` → `hora` → `datos`, con el estado en la URL (`?servicio=…&barbero=…&fecha=…`) para que "atrás" y recargar funcionen. Incluye "Repetir mi último corte", los errores de teléfono inválido, de máximo de citas y de límite por IP, el aviso "Ese horario se acaba de ocupar" (vuelve a la hora sin borrar nombre ni teléfono) y la página "no disponible".
   *Cubre:* RF-01 a RF-09, CU-01, RNF-01 · *Listo cuando:* se completa una reserva real contra la API local.
+  ***Avance:*** hechos los 4 pasos en `domains/agenda/reserva/` con datos de demostración: estado en la URL, "Repetir mi último corte" y "Te atendió la última vez" (`lib/dispositivo.ts`), teléfono inválido (8a), "no disponible" (1a) y día sin turnos. **Falta:** conectar F1.01, F1.04 y F1.05; distinguir los errores de `crearCita`, que hoy muestran un solo mensaje genérico. Para 9a hay que volver al paso 3 sin perder nombre ni teléfono: hoy el formulario se rellena solo desde el dispositivo, así que hace falta guardarlos antes de salir. También faltan 9b (máximo de citas, sin mostrar detalles), 9c (límite por IP), 5a (sin turnos en toda la ventana: mostrar el contacto de la barbería) y la decisión sobre el texto de consentimiento (ver las preguntas abiertas).
 - [ ] **F1.13 · Confirmación** — `/b/[slug]/listo`: resumen, "Agregar a mi calendario" (.ics), "Cómo llegar" (enlace de mapa) y guardado de los datos en el dispositivo.
   *Cubre:* RF-08, CU-01 paso 10 · *Listo cuando:* ambos botones funcionan en un celular.
+  ***Avance:*** pantalla hecha (`reserva/confirmacion.tsx`), con el guardado en el dispositivo. "Cómo llegar" abre Google Maps con la dirección. **Falta:** "Agregar a mi calendario" apunta a `{API}/public/citas/{token}/calendario.ics`, que no existe hasta F1.08. Hoy la página lee servicio, barbero, hora y token de la URL; con la API conviene leer la cita por el token, para no confiar en lo que trae la URL.
 - [ ] **F1.14 · Gestión de la cita** — `/c/[token]` (ver) y `/c/[token]/cambiar` (reagendar), cancelar con confirmación, modo solo lectura para citas canceladas o pasadas y, pasado el límite, el contacto de la barbería (wa.me) en lugar de los botones.
   *Cubre:* RF-10 a RF-12, CU-02 a CU-04 · *Listo cuando:* los tres flujos funcionan con la cita creada en F1.12.
+  ***Avance:*** solo existe `/c/[token]` como pantalla de "pendiente". No hay diseño en `front-interface/`: reutiliza `Paso`, `GrillaTurnos` y la tarjeta de la confirmación.
 
 ### Pruebas y medición
 
@@ -184,14 +250,19 @@ F0 ──► F1 ──► F2 ──┐
 
 - [ ] **F2.11 · Estructura del panel y PWA** — layout protegido con navegación, íconos reales de la PWA, oferta de instalación en el celular y selector de barbero para el dueño.
   *Cubre:* RF-31, CU-06 paso 5 · *Listo cuando:* el panel se instala como aplicación en un celular.
+  ***Avance:*** la barra inferior (`components/ui/nav-panel.tsx`) y el selector de barbero existen. **Falta:** `app/panel/(protegido)/layout.tsx`, que hoy no existe (depende de F0.10). El selector de barbero se muestra a todos y solo debe verlo el dueño. Faltan también los íconos reales y la oferta de instalación.
 - [ ] **F2.12 · Agenda** — `/panel/agenda`: resumen, citas en orden con su estado, huecos libres, línea de la hora actual, flechas de día anterior y siguiente y vista semanal (prioridad S).
   *Cubre:* RF-23 a RF-25, CU-07 · *Listo cuando:* se ve un día del seed con huecos y citas.
+  ***Avance:*** hecha con datos de demostración (`domains/agenda/panel/agenda-del-dia.tsx`): resumen, estados, huecos libres que enlazan a la cita manual, línea de "ahora", flechas de día y "No tienes horario este día". **Falta:** conectar F2.01, que debe devolver citas y huecos con la forma de `AgendaDia`. Faltan también la vista semanal (S) y mover la línea de "ahora" sin recargar, porque hoy usa la hora del servidor al cargar.
 - [ ] **F2.13 · Detalle de cita y acciones** — `/panel/citas/[id]`: datos, historial, botones de atendida, no vino, reagendar, cancelar, y de WhatsApp y llamar (wa.me y `tel:`, que no aparecen si no hay teléfono). El historial de avisos se conecta en F3.11.
   *Cubre:* RF-26, RF-27, CU-08 · *Listo cuando:* cada acción cambia el estado y la agenda lo refleja.
+  ***Avance:*** pantalla hecha con datos de demostración (`domains/agenda/panel/detalle-cita.tsx`): cliente, visitas, último corte, WhatsApp y llamar solo si hay teléfono, y el historial de avisos que entra como `ReactNode` desde la página, sin cruzar dominios. **Falta:** conectar F2.02. Los botones de `acciones-cita.tsx` solo muestran un aviso hasta F2.03. Faltan también la pantalla de reagendar desde el panel, la confirmación antes de cancelar y que "No vino" aparezca solo después de la hora de inicio.
 - [ ] **F2.14 · Cita manual y bloqueos** — `/panel/citas/nueva` (desde el "+" o desde un hueco libre) y `/panel/bloqueos`.
   *Cubre:* RF-28, RF-29, RF-40, CU-09, CU-10 · *Listo cuando:* tocar un hueco prellena la hora.
+  ***Avance:*** `/panel/citas/nueva` es una pantalla de "pendiente". Los huecos y el "+" de la agenda ya enlazan a `/panel/citas/nueva?inicio=…&miembro=…`. `/panel/bloqueos` no existe.
 - [ ] **F2.15 · Ajustes y clientes** — `/panel/ajustes` (datos, servicios, equipo, horarios y reglas) y `/panel/clientes`.
   *Cubre:* RF-32 a RF-36, RF-38, CU-11, CU-12 · *Listo cuando:* un dueño configura una barbería nueva sin tocar la base.
+  ***Avance:*** `/panel/clientes` y `/panel/ajustes` son pantallas de "pendiente", sin diseño en `front-interface/`.
 - [ ] **F2.16 · Agenda en vivo** — `use-agenda-en-vivo`: suscripción de Realtime a `citas` que vuelve a pedir la agenda cuando llega un cambio. La RLS aplica también a Realtime.
   *Cubre:* RF-30 · *Listo cuando:* con el panel abierto, una reserva hecha desde la página pública aparece sin recargar, y un barbero no recibe cambios de las citas de otro.
 
@@ -243,6 +314,7 @@ F0 ──► F1 ──► F2 ──┐
 
 - [ ] **F3.11 · Historial de avisos** — endpoint en `notificaciones` con los avisos de una cita y su estado de entrega (los fallidos con su código de error) y el componente en la web (`domains/notificaciones`) dentro del detalle de la cita. Vista de administración de notificaciones y errores por barbería.
   *Cubre:* RF-42, RNF-17 · *Listo cuando:* el barbero ve en el detalle si el recordatorio llegó, se leyó o falló.
+  ***Avance:*** el componente `domains/notificaciones/historial-avisos.tsx` está hecho y se muestra en el detalle de la cita. Hoy `obtenerAvisos` devuelve una lista fija. El endpoint debe producir `Aviso` (`texto`, `cuando`, `atencion`), o hay que ajustar el tipo.
 - [ ] **F3.12 · Supresión de datos y retención** — endpoint de administración que llama a `anonimizar_cliente` y publica `ClienteAnonimizado`; el manejador de `notificaciones` borra el teléfono y las variables de sus filas y anula las pendientes. Tarea diaria que borra `whatsapp_eventos` con más de 90 días.
   *Cubre:* RF-43, RNF-11, CU-16 · *Listo cuando:* tras anonimizar a un cliente no queda su teléfono en ninguna tabla.
 
