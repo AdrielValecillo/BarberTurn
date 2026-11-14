@@ -40,8 +40,8 @@
 | API | Solo el esqueleto: `/health`, bus de eventos y contexto RLS. **Ningún endpoint de negocio.** Los 5 dominios están vacíos. |
 | Web | Las pantallas del diseño (`front-interface/`) están construidas con **datos de demostración**: reserva en 4 pasos, confirmación, agenda del día y detalle de cita. Ver el *Avance* de F1.12, F1.13, F2.12 y F2.13. |
 | Sesión del panel | No existe. `/panel/*` se abre sin iniciar sesión. |
-| CI | Nunca se ha ejecutado (F0.03). |
-| Ramas | `feat/f1-12-pantallas-del-diseno` está subida y sin PR. Abrir el PR también sirve para F0.03. |
+| CI | `ci-web` pasa. `ci-api` falla en el job `base-de-datos`, en el paso `supabase start` (el job `api` pasa). Ver F0.03. |
+| Ramas | Todo está en `main`. Las pantallas entraron por el PR #1; el plan y el PDF del diseño, directo en `main`. |
 
 ### Cómo está conectada la web a los datos
 
@@ -64,7 +64,7 @@ Las búsquedas de `shortcut:` en `apps/web` listan cada atajo pendiente.
 
 Es el camino crítico para que un cliente reserve de verdad. Los pasos 1 a 3 no necesitan Docker.
 
-1. **Abrir el PR** de `feat/f1-12-pantallas-del-diseno` y corregir la CI hasta que pase (**F0.03**).
+1. **F0.03**: corregir el job `base-de-datos` de `ci-api`, que falla en `supabase start`.
 2. **F1.02** (teléfono y clientes) y **F1.03** (reglas puras de la agenda): lógica pura con pruebas de tabla.
 3. **F0.07**: errores de dominio (el 409 de turno ocupado), logs y `conftest.py`.
 4. **F0.05**: levantar Supabase local. **Necesita Docker en ejecución.**
@@ -85,7 +85,6 @@ No las resuelvas por tu cuenta: pregunta antes de implementar lo que dependa de 
 - **Despliegue de la web en Railway:** con la carpeta raíz `apps/web` no ve `packages/api-types` (F0.13).
 - **Doc 04:** sobra un fragmento de tabla duplicado (líneas ~103–116).
 - **P-01 y P-02** (nombre comercial y ADR-0007): F0.12.
-- **`front-interface/`:** ¿se versiona el PDF del diseño (1,8 MB) o se queda fuera del repositorio?
 
 ---
 
@@ -127,6 +126,7 @@ F0 ──► F1 ──► F2 ──┐
 - [x] **F0.02 · Primer commit y repositorio remoto** — revisar `git status`, hacer el primer commit (Conventional Commits) y subir `main` a GitHub.
   *Listo cuando:* el repo está en GitHub con el estado actual.
 - [ ] **F0.03 · Primera ejecución de la CI** — abrir un PR de prueba y corregir los workflows (`ci-api`, `ci-web`; nunca se han ejecutado, incluido el job que levanta `supabase start`).
+  ***Avance:*** ya corrieron. `ci-web` pasa (también en el PR #1). En `ci-api` el job `api` pasa y `base-de-datos` falla en el paso `supabase start`, desde el primer commit.
   *Cubre:* RNF-16 · *Listo cuando:* `ci-api` y `ci-web` pasan en verde.
 
 ### Base de datos
@@ -362,6 +362,7 @@ Una línea por avance, con el ID del paso. Lo más reciente arriba.
 
 | Fecha | Paso | Nota |
 |---|---|---|
+| 2026-11-14 | F0.03 (parcial) | PR #1 fusionado. `ci-web` en verde; `ci-api` falla en `supabase start` (job `base-de-datos`). El PDF del diseño queda versionado en `front-interface/`. |
 | 2026-11-14 | F1.12, F1.13, F2.12, F2.13 (parcial) | Pantallas del diseño (`front-interface/`) construidas con **datos de demostración**: reserva en 4 pasos con el estado en la URL, confirmación, agenda del día y detalle de cita. Siguen sin marcar: falta conectarlas a la API (F1.01, F1.04, F1.05, F1.08, F2.01 a F2.03, F3.11), la sesión del panel (F0.10) y los avisos de turno ocupado, máximo de citas y límite por IP. El cambio es reemplazar `domains/agenda/api.ts` y `domains/notificaciones/api.ts` y borrar `demo.ts`. `/c/[token]`, cita manual, clientes y ajustes son pantallas de "pendiente". |
 | 2026-11-14 | F1.10, F1.11 | `lib/fechas.ts`, `lib/telefono.ts` y `lib/dispositivo.ts` con pruebas de Vitest de los formatos del doc 01. Componentes base en `components/ui/` (botón, campo, chip, barra de pasos, íconos); reserva recorrida solo con teclado y sin desborde a 360 px. |
 | 2026-11-09 | F0.02 | Primer commit y repositorio remoto en GitHub (`AdrielValecillo/BarberTurn`, rama `main`). |
