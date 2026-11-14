@@ -1,0 +1,218 @@
+/* Agenda del día */
+.cabecera {
+  display: grid;
+  gap: 0.875rem;
+  padding: 1rem var(--margen);
+  border-bottom: 1px solid var(--linea);
+}
+
+.titulo,
+.fecha,
+.conteo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.titulo,
+.fecha {
+  justify-content: space-between;
+}
+
+.conteo {
+  flex-wrap: wrap;
+}
+
+.selector {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem 0.25rem 0.375rem;
+  border: 1.5px solid var(--linea);
+  border-radius: 2rem;
+}
+
+.selector > span {
+  width: 2.125rem;
+  height: 2.125rem;
+  font-size: 1rem;
+}
+
+.selector select {
+  min-height: 2.25rem;
+  padding: 0 1.75rem 0 0.5rem;
+  border: 0;
+  background: none;
+  font-weight: 600;
+  appearance: none;
+  cursor: pointer;
+}
+
+.selector svg {
+  position: absolute;
+  right: 0.75rem;
+  pointer-events: none;
+}
+
+.flecha {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background: var(--gris);
+}
+
+.lista {
+  flex: 1;
+  padding: 0 var(--margen) 6rem;
+}
+
+.fila {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 4.25rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--linea);
+}
+
+.hora {
+  flex: none;
+  width: 4rem;
+  color: var(--tenue);
+  font-size: 0.9375rem;
+}
+
+.hora strong,
+.horaGrande {
+  display: block;
+  color: var(--tinta);
+  font-family: var(--titulos);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.hora strong {
+  font-size: 1.75rem;
+}
+
+.quien {
+  display: grid;
+  flex: 1;
+  gap: 0.125rem;
+  min-width: 0;
+  color: var(--tenue);
+}
+
+.quien strong {
+  color: var(--tinta);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+/* Citas ya cerradas (atendida, no vino, cancelada): más apagadas */
+.cerrada strong {
+  color: var(--tenue);
+}
+
+.hueco {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+  margin: 0.625rem 0;
+  padding: 0 1rem;
+  border: 1.5px dashed var(--borde);
+  border-radius: 0.875rem;
+  color: var(--tenue);
+}
+
+.ahora {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0 0.25rem;
+  color: var(--verde);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.ahora::before {
+  content: "";
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--verde);
+}
+
+.ahora span {
+  flex: 1;
+  height: 2px;
+  background: var(--verde);
+}
+
+.vacio {
+  padding: 1.5rem 0 0.5rem;
+  color: var(--tenue);
+}
+
+/* Botón flotante "+" sobre la barra de navegación */
+.nueva {
+  position: sticky;
+  bottom: 5.25rem;
+  display: grid;
+  place-items: center;
+  align-self: flex-end;
+  width: 3.75rem;
+  height: 3.75rem;
+  margin: -4.75rem var(--margen) 1rem;
+  border-radius: 50%;
+  background: var(--verde);
+  color: #fff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
+}
+
+/* Detalle de la cita */
+.horaGrande {
+  margin: 0.625rem 0 0.375rem;
+  font-size: 3.75rem;
+}
+
+.horaGrande span {
+  font-size: 1.5rem;
+}
+
+.tenue {
+  margin-top: 0.25rem;
+  color: var(--tenue);
+}
+
+.cliente {
+  display: grid;
+  gap: 0.875rem;
+  margin: 1.5rem 0;
+  padding: 1.125rem;
+  border-radius: var(--radio);
+  background: var(--gris);
+  color: var(--tenue);
+}
+
+.persona {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.persona strong {
+  font-size: 1.25rem;
+}
+
+.contacto,
+.tres {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0.5rem;
+}

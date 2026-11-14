@@ -1,0 +1,45 @@
+.titulo {
+  margin-bottom: 0.875rem;
+  color: var(--tenue);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.avisos {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+}
+
+.avisos li {
+  display: flex;
+  gap: 0.875rem;
+}
+
+.avisos p {
+  display: grid;
+  gap: 0.125rem;
+  font-weight: 600;
+}
+
+.avisos small {
+  color: var(--tenue);
+  font-size: 0.9375rem;
+  font-weight: 400;
+}
+
+.marca {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--verde-suave);
+  color: var(--verde);
+}
+
+.atencion {
+  background: var(--ambar);
+  color: var(--ambar-tinta);
+}

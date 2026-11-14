@@ -131,9 +131,9 @@ F0 ──► F1 ──► F2 ──┐
 
 ### Web
 
-- [ ] **F1.10 · Utilidades** — `lib/fechas.ts` (formato `es-CO` en la zona de la barbería: "5:15 p. m.", "sábado 7 de noviembre", "$35.000"), `lib/telefono.ts` y `lib/dispositivo.ts` (nombre, teléfono y último servicio, solo en el dispositivo).
+- [x] **F1.10 · Utilidades** — `lib/fechas.ts` (formato `es-CO` en la zona de la barbería: "5:15 p. m.", "sábado 7 de noviembre", "$35.000"), `lib/telefono.ts` y `lib/dispositivo.ts` (nombre, teléfono y último servicio, solo en el dispositivo).
   *Cubre:* RF-09, RNF-12, RNF-13 · *Listo cuando:* pruebas de Vitest con los ejemplos de formato del doc 01.
-- [ ] **F1.11 · Componentes base** — `components/ui/`: botón, campo con etiqueta, chip de estado y barra de pasos. Móvil primero desde 360 px, objetivos táctiles de 44 px, contraste 4.5:1.
+- [x] **F1.11 · Componentes base** — `components/ui/`: botón, campo con etiqueta, chip de estado y barra de pasos. Móvil primero desde 360 px, objetivos táctiles de 44 px, contraste 4.5:1.
   *Cubre:* RNF-02, RNF-03 · *Listo cuando:* se usan en la reserva y se pueden operar con teclado.
 - [ ] **F1.12 · Reserva en 4 pasos** — rutas `/b/[slug]` → `barbero` → `hora` → `datos`, con el estado en la URL (`?servicio=…&barbero=…&fecha=…`) para que "atrás" y recargar funcionen. Incluye "Repetir mi último corte", los errores de teléfono inválido, de máximo de citas y de límite por IP, el aviso "Ese horario se acaba de ocupar" (vuelve a la hora sin borrar nombre ni teléfono) y la página "no disponible".
   *Cubre:* RF-01 a RF-09, CU-01, RNF-01 · *Listo cuando:* se completa una reserva real contra la API local.
@@ -290,5 +290,7 @@ Una línea por avance, con el ID del paso. Lo más reciente arriba.
 
 | Fecha | Paso | Nota |
 |---|---|---|
+| 2026-11-14 | F1.12, F1.13, F2.12, F2.13 (parcial) | Pantallas del diseño (`front-interface/`) construidas con **datos de demostración**: reserva en 4 pasos con el estado en la URL, confirmación, agenda del día y detalle de cita. Siguen sin marcar: falta conectarlas a la API (F1.01, F1.04, F1.05, F1.08, F2.01 a F2.03, F3.11), la sesión del panel (F0.10) y los avisos de turno ocupado, máximo de citas y límite por IP. El cambio es reemplazar `domains/agenda/api.ts` y `domains/notificaciones/api.ts` y borrar `demo.ts`. `/c/[token]`, cita manual, clientes y ajustes son pantallas de "pendiente". |
+| 2026-11-14 | F1.10, F1.11 | `lib/fechas.ts`, `lib/telefono.ts` y `lib/dispositivo.ts` con pruebas de Vitest de los formatos del doc 01. Componentes base en `components/ui/` (botón, campo, chip, barra de pasos, íconos); reserva recorrida solo con teclado y sin desborde a 360 px. |
 | 2026-11-09 | F0.02 | Primer commit y repositorio remoto en GitHub (`AdrielValecillo/BarberTurn`, rama `main`). |
 | 2026-11-09 | F0.01, F0.04, F0.06, F0.09 | Monorepo montado. API: ruff, mypy, import-linter, pytest y `Dockerfile` verificados. Web: lint, build y regla de fronteras verificados. Migración, seed y pruebas de base verificados en PostgreSQL 16 (falta Supabase local, F0.05). |

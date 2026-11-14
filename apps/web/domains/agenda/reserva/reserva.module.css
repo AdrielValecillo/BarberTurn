@@ -1,0 +1,329 @@
+.cabeza {
+  margin-bottom: 1.5rem;
+}
+
+.cabeza p,
+.nota {
+  margin-top: 0.375rem;
+  color: var(--tenue);
+}
+
+.nota {
+  margin-top: 1.25rem;
+}
+
+.rotulo {
+  margin: 1.5rem 0 0.375rem;
+  color: var(--tenue);
+  font-weight: 600;
+}
+
+/* Pie: resumen de lo elegido y total */
+.resumen {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--tenue);
+}
+
+.resumen strong {
+  color: var(--tinta);
+}
+
+.legal {
+  color: var(--tenue);
+  font-size: 0.9375rem;
+  text-align: center;
+}
+
+/* Paso 1 y 2: opciones con radio */
+.repetir,
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.repetir {
+  min-height: 4.75rem;
+  padding: 1rem;
+  border-radius: var(--radio);
+  background: var(--amarillo);
+}
+
+.circulo {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: var(--gris);
+}
+
+.repetir .circulo {
+  background: var(--tinta);
+  color: var(--amarillo);
+}
+
+.opcion {
+  min-height: 4.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--linea);
+  cursor: pointer;
+}
+
+.opcion:last-child {
+  border-bottom: 0;
+}
+
+.tarjeta {
+  padding: 1rem;
+  border: 1.5px solid var(--linea);
+  border-radius: var(--radio);
+}
+
+.lineas {
+  display: grid;
+  flex: 1;
+  gap: 0.125rem;
+  min-width: 0;
+  justify-items: start;
+  color: var(--tenue);
+}
+
+.lineas strong {
+  color: var(--tinta);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.precio {
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.radio {
+  display: grid;
+  place-content: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 2px solid var(--borde);
+  border-radius: 50%;
+  appearance: none;
+  cursor: pointer;
+}
+
+.radio::before {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--verde);
+  transform: scale(0);
+}
+
+.radio:checked {
+  border-color: var(--verde);
+}
+
+.radio:checked::before {
+  transform: scale(1);
+}
+
+/* Paso 3: días y turnos */
+.dias {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0 calc(-1 * var(--margen));
+  padding: 0.25rem var(--margen);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dia {
+  display: grid;
+  place-content: center;
+  flex: none;
+  width: 3.875rem;
+  height: 3.875rem;
+  border-radius: 0.875rem;
+  background: var(--gris);
+  text-align: center;
+  text-transform: capitalize;
+}
+
+.dia strong,
+.turno strong,
+.horaGrande {
+  font-family: var(--titulos);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dia strong {
+  display: block;
+  font-size: 1.5rem;
+}
+
+.dia[aria-current] {
+  background: var(--verde);
+  color: #fff;
+}
+
+.turnos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.625rem;
+}
+
+.turno {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 1.125rem 0;
+  border-radius: 0.875rem;
+  background: var(--gris);
+  color: var(--tenue);
+  font-size: 0.875rem;
+}
+
+.turno strong {
+  color: var(--tinta);
+  font-size: 1.75rem;
+}
+
+.turno input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.turno:has(input:checked),
+.turno:has(input:checked) strong {
+  background: var(--verde);
+  color: #fff;
+}
+
+.turno:has(input:focus-visible) {
+  outline: 3px solid var(--verde);
+  outline-offset: 2px;
+}
+
+/* Paso 4: resumen y formulario */
+.detalles {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.125rem;
+  border-radius: var(--radio);
+  background: var(--gris);
+  list-style: none;
+}
+
+.detalles li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.formulario {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.casilla {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.casilla input {
+  flex: none;
+  width: 1.625rem;
+  height: 1.625rem;
+  accent-color: var(--verde);
+}
+
+/* Confirmación */
+.exito {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+}
+
+.exito .circulo {
+  background: var(--verde);
+  color: #fff;
+}
+
+.tiquete {
+  margin: 1.25rem 0 1rem;
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  background: var(--amarillo);
+}
+
+.tiquete hr {
+  margin: 1rem 0;
+  border: 0;
+  border-top: 1.5px dashed rgb(0 0 0 / 35%);
+}
+
+.tiquete small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--tenue);
+  font-size: 1rem;
+}
+
+.horaGrande {
+  font-size: 4rem;
+}
+
+.horaGrande span {
+  font-size: 1.5rem;
+}
+
+.acciones {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.burbuja {
+  margin-right: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: 1rem 1rem 1rem 0.25rem;
+  background: #e7f2ea;
+}
+
+.burbuja small {
+  display: block;
+  color: var(--tenue);
+  font-size: 0.875rem;
+  text-align: right;
+}
+
+.respuestas {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  margin: 0.5rem 0 1.5rem;
+}
+
+.respuestas span {
+  padding: 0.625rem 0;
+  border: 1.5px solid var(--borde);
+  border-radius: 0.75rem;
+  color: var(--verde);
+  font-weight: 600;
+  text-align: center;
+}
