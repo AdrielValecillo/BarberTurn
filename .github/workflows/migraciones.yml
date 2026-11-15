@@ -15,5 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: supabase/setup-cli@v1
+        with:
+          version: 3.0.0 # la misma del package.json; sin esto instala una vieja que no lee config.toml
       - run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_ID }}
       - run: supabase db push
