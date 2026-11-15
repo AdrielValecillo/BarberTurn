@@ -65,7 +65,7 @@ Las búsquedas de `shortcut:` en `apps/web` listan cada atajo pendiente.
 Es el camino crítico para que un cliente reserve de verdad. Los pasos 1 a 3 no necesitan Docker.
 
 1. **F0.03**: corregir el job `base-de-datos` de `ci-api`, que falla en `supabase start`.
-2. **F1.02** (teléfono y clientes): lógica pura con pruebas de tabla. F1.03 ya está.
+2. **F1.02**: falta `clientes.registrar` y los consentimientos; necesitan la base, así que van después de F0.05 y F0.07. El teléfono (`shared/telefono.py`) y F1.03 ya están.
 3. **F0.07**: errores de dominio (el 409 de turno ocupado), logs y `conftest.py`.
 4. **F0.05**: levantar Supabase local. **Necesita Docker en ejecución.**
 5. **F1.01** y **F1.04**: conectar los pasos 1 a 3 de la reserva.
@@ -176,6 +176,7 @@ F0 ──► F1 ──► F2 ──┐
 - [ ] **F1.01 · Datos públicos de la barbería** — `GET /public/barberias/{slug}`: nombre, dirección, servicios activos con duración y precio, y barberos que atienden con su próximo turno. Una barbería inexistente o suspendida responde "no disponible". Ojo con las capas: `barberias` no puede depender de `agenda`, así que el cálculo del "próximo turno" hace que este endpoint viva en `agenda/routes/public.py`.
   *Cubre:* RF-01, RF-03, RN-16, CU-01 · *Listo cuando:* devuelve los datos del seed y una prueba confirma que un slug nunca devuelve datos de otra barbería.
 - [ ] **F1.02 · Teléfono, clientes y consentimientos** — `shared/telefono.py` (normalizar a E.164, +57 por defecto), `clientes.registrar` (alta o actualización por `(barberia, teléfono)`, el nombre queda con el último usado) y registro de consentimientos con la versión del texto aceptado.
+  ***Avance:*** `shared/telefono.py` (`normalizar`) hecho, con los mismos casos que la web (solo celulares de Colombia; dígitos no ASCII rechazados). **Falta:** `clientes.registrar` y los consentimientos, que necesitan la base (F0.05, F0.07).
   *Cubre:* RF-06, RF-07, RN-10 · *Listo cuando:* pruebas de tabla con varios formatos de teléfono; el mismo número en dos barberías crea dos clientes.
 - [x] **F1.03 · Reglas puras de la agenda** — `agenda/rules.py`: transiciones de estado (RN-08), elección del "primero disponible" (RN-05) y límite de cancelación (RN-06). Sin base ni red.
   *Cubre:* RN-05, RN-06, RN-08 · *Listo cuando:* pruebas de tabla que recorren cada flecha del diagrama de estados y los desempates de RN-05.
@@ -362,6 +363,7 @@ Una línea por avance, con el ID del paso. Lo más reciente arriba.
 
 | Fecha | Paso | Nota |
 |---|---|---|
+| 2026-11-14 | F1.02 (parcial) | `shared/telefono.py`: `normalizar` a E.164 con los mismos casos que `apps/web/lib/telefono.ts`; usa `[0-9]` porque en Python `\d` acepta dígitos Unicode. Falta `clientes.registrar` y los consentimientos (necesitan la base). |
 | 2026-11-14 | F1.03 | `agenda/rules.py`: `puede_pasar` (RN-08; "no vino" solo desde la hora de inicio), `puede_cancelar` (RN-06; el cliente puede justo en el límite, `miembro` siempre, cualquier otro actor nunca) y `primero_disponible` (RN-05, recibe un `Candidato` por barbero; empate total por `miembro_id`). Pruebas de tabla que recorren los 25 pares de estados y los desempates. La corrección de atendida/no vino en 24 h quedó decidida en el doc 01 (desde el inicio, solo entre esos dos estados, solo el dueño) y se implementa en F2.03. |
 | 2026-11-14 | F0.03 (parcial) | PR #1 fusionado. `ci-web` en verde; `ci-api` falla en `supabase start` (job `base-de-datos`). El PDF del diseño queda versionado en `front-interface/`. |
 | 2026-11-14 | F1.12, F1.13, F2.12, F2.13 (parcial) | Pantallas del diseño (`front-interface/`) construidas con **datos de demostración**: reserva en 4 pasos con el estado en la URL, confirmación, agenda del día y detalle de cita. Siguen sin marcar: falta conectarlas a la API (F1.01, F1.04, F1.05, F1.08, F2.01 a F2.03, F3.11), la sesión del panel (F0.10) y los avisos de turno ocupado, máximo de citas y límite por IP. El cambio es reemplazar `domains/agenda/api.ts` y `domains/notificaciones/api.ts` y borrar `demo.ts`. `/c/[token]`, cita manual, clientes y ajustes son pantallas de "pendiente". |
