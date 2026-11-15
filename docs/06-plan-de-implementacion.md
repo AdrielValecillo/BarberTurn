@@ -126,7 +126,7 @@ F0 ──► F1 ──► F2 ──┐
 - [x] **F0.02 · Primer commit y repositorio remoto** — revisar `git status`, hacer el primer commit (Conventional Commits) y subir `main` a GitHub.
   *Listo cuando:* el repo está en GitHub con el estado actual.
 - [ ] **F0.03 · Primera ejecución de la CI** — abrir un PR de prueba y corregir los workflows (`ci-api`, `ci-web`; nunca se han ejecutado, incluido el job que levanta `supabase start`).
-  ***Avance:*** ya corrieron. `ci-web` pasa (también en el PR #1). En `ci-api` el job `api` pasa y `base-de-datos` falla en el paso `supabase start`, desde el primer commit.
+  ***Avance:*** ya corrieron. `ci-web` pasa (también en el PR #1). En `ci-api` el job `api` pasa y `base-de-datos` falla en el paso `supabase start`, desde el primer commit. Causa: `supabase/setup-cli@v1` sin `version` instala un CLI viejo que no entiende el `config.toml` generado con la 3.0.0 ("has invalid keys"). Se fijó `version: 3.0.0` en `ci-api` y `migraciones`; falta ver la CI en verde.
   *Cubre:* RNF-16 · *Listo cuando:* `ci-api` y `ci-web` pasan en verde.
 
 ### Base de datos
