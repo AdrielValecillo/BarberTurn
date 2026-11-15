@@ -37,7 +37,7 @@
 | Parte | Estado |
 |---|---|
 | Base de datos | Esquema, seed y pruebas pgTAP verificados en PostgreSQL 16, **no** en Supabase local (F0.05). |
-| API | Solo el esqueleto: `/health`, bus de eventos y contexto RLS. **Ningún endpoint de negocio.** Los 5 dominios están vacíos. |
+| API | Solo el esqueleto: `/health`, bus de eventos y contexto RLS. **Ningún endpoint de negocio.** `agenda` tiene sus reglas puras (`rules.py`, F1.03); los otros 4 dominios están vacíos. |
 | Web | Las pantallas del diseño (`front-interface/`) están construidas con **datos de demostración**: reserva en 4 pasos, confirmación, agenda del día y detalle de cita. Ver el *Avance* de F1.12, F1.13, F2.12 y F2.13. |
 | Sesión del panel | No existe. `/panel/*` se abre sin iniciar sesión. |
 | CI | `ci-web` pasa. `ci-api` falla en el job `base-de-datos`, en el paso `supabase start` (el job `api` pasa). Ver F0.03. |
@@ -65,7 +65,7 @@ Las búsquedas de `shortcut:` en `apps/web` listan cada atajo pendiente.
 Es el camino crítico para que un cliente reserve de verdad. Los pasos 1 a 3 no necesitan Docker.
 
 1. **F0.03**: corregir el job `base-de-datos` de `ci-api`, que falla en `supabase start`.
-2. **F1.02** (teléfono y clientes) y **F1.03** (reglas puras de la agenda): lógica pura con pruebas de tabla.
+2. **F1.02** (teléfono y clientes): lógica pura con pruebas de tabla. F1.03 ya está.
 3. **F0.07**: errores de dominio (el 409 de turno ocupado), logs y `conftest.py`.
 4. **F0.05**: levantar Supabase local. **Necesita Docker en ejecución.**
 5. **F1.01** y **F1.04**: conectar los pasos 1 a 3 de la reserva.
@@ -177,7 +177,7 @@ F0 ──► F1 ──► F2 ──┐
   *Cubre:* RF-01, RF-03, RN-16, CU-01 · *Listo cuando:* devuelve los datos del seed y una prueba confirma que un slug nunca devuelve datos de otra barbería.
 - [ ] **F1.02 · Teléfono, clientes y consentimientos** — `shared/telefono.py` (normalizar a E.164, +57 por defecto), `clientes.registrar` (alta o actualización por `(barberia, teléfono)`, el nombre queda con el último usado) y registro de consentimientos con la versión del texto aceptado.
   *Cubre:* RF-06, RF-07, RN-10 · *Listo cuando:* pruebas de tabla con varios formatos de teléfono; el mismo número en dos barberías crea dos clientes.
-- [ ] **F1.03 · Reglas puras de la agenda** — `agenda/rules.py`: transiciones de estado (RN-08), elección del "primero disponible" (RN-05) y límite de cancelación (RN-06). Sin base ni red.
+- [x] **F1.03 · Reglas puras de la agenda** — `agenda/rules.py`: transiciones de estado (RN-08), elección del "primero disponible" (RN-05) y límite de cancelación (RN-06). Sin base ni red.
   *Cubre:* RN-05, RN-06, RN-08 · *Listo cuando:* pruebas de tabla que recorren cada flecha del diagrama de estados y los desempates de RN-05.
 - [ ] **F1.04 · Turnos disponibles** — `GET /public/barberias/{slug}/turnos?servicio&miembro&fecha` sobre `turnos_disponibles()`; sin `miembro` aplica "el primero disponible".
   *Cubre:* RF-03, RF-04, RN-02 a RN-05, RNF-04 · *Listo cuando:* el ejemplo del doc 01 §4 (14:00, 14:15 y de 15:45 a 18:15) pasa como prueba de integración y la respuesta tarda menos de 500 ms.
@@ -229,7 +229,7 @@ F0 ──► F1 ──► F2 ──┐
   *Cubre:* RF-23, RF-24, RF-37, CU-07 · *Listo cuando:* una prueba con barbero y dueño confirma qué ve cada uno.
 - [ ] **F2.02 · Detalle de la cita** — `GET /panel/citas/{id}`: estado, servicio, datos del cliente, número de visitas y fecha del último corte (`v_clientes_resumen`) e historial de eventos. El historial de avisos lo da `notificaciones` (F3.11), no la agenda, que no puede leer hacia arriba.
   *Cubre:* RF-26, CU-08 · *Listo cuando:* devuelve el detalle con el historial de eventos.
-- [ ] **F2.03 · Acciones sobre la cita** — `POST /panel/citas/{id}/acciones`: atendida, no vino (solo después de la hora de inicio), cancelar con motivo opcional, reagendar sin límite de tiempo, reasignar a otro barbero (solo el dueño, validando su disponibilidad) y corrección de un estado final por el dueño dentro de las 24 h. Cada acción registra el evento con su actor y publica el evento de dominio que corresponda.
+- [ ] **F2.03 · Acciones sobre la cita** — `POST /panel/citas/{id}/acciones`: atendida, no vino (solo después de la hora de inicio), cancelar con motivo opcional, reagendar sin límite de tiempo, reasignar a otro barbero (solo el dueño, validando su disponibilidad) y corrección de un estado final por el dueño dentro de las 24 h desde el inicio, solo entre atendida y no vino (RN-08; va como regla nueva en `agenda/rules.py`, porque `puede_pasar` los trata como finales). Cada acción registra el evento con su actor y publica el evento de dominio que corresponda.
   *Cubre:* RF-20, RF-27, RN-08, RN-18, CU-08 · *Listo cuando:* pruebas para cada transición permitida y cada una rechazada.
 - [ ] **F2.04 · Cita manual** — `POST /panel/citas`: teléfono opcional; si hay teléfono, la casilla de autorización guarda un consentimiento con origen `manual`. Fuera del horario del barbero advierte pero permite guardar; un cruce con otra cita lo impide.
   *Cubre:* RF-28, RN-02, RN-17, CU-09 · *Listo cuando:* una cita sin teléfono o sin autorización queda marcada para no recibir WhatsApp.
@@ -362,6 +362,7 @@ Una línea por avance, con el ID del paso. Lo más reciente arriba.
 
 | Fecha | Paso | Nota |
 |---|---|---|
+| 2026-11-14 | F1.03 | `agenda/rules.py`: `puede_pasar` (RN-08; "no vino" solo desde la hora de inicio), `puede_cancelar` (RN-06; el cliente puede justo en el límite, `miembro` siempre, cualquier otro actor nunca) y `primero_disponible` (RN-05, recibe un `Candidato` por barbero; empate total por `miembro_id`). Pruebas de tabla que recorren los 25 pares de estados y los desempates. La corrección de atendida/no vino en 24 h quedó decidida en el doc 01 (desde el inicio, solo entre esos dos estados, solo el dueño) y se implementa en F2.03. |
 | 2026-11-14 | F0.03 (parcial) | PR #1 fusionado. `ci-web` en verde; `ci-api` falla en `supabase start` (job `base-de-datos`). El PDF del diseño queda versionado en `front-interface/`. |
 | 2026-11-14 | F1.12, F1.13, F2.12, F2.13 (parcial) | Pantallas del diseño (`front-interface/`) construidas con **datos de demostración**: reserva en 4 pasos con el estado en la URL, confirmación, agenda del día y detalle de cita. Siguen sin marcar: falta conectarlas a la API (F1.01, F1.04, F1.05, F1.08, F2.01 a F2.03, F3.11), la sesión del panel (F0.10) y los avisos de turno ocupado, máximo de citas y límite por IP. El cambio es reemplazar `domains/agenda/api.ts` y `domains/notificaciones/api.ts` y borrar `demo.ts`. `/c/[token]`, cita manual, clientes y ajustes son pantallas de "pendiente". |
 | 2026-11-14 | F1.10, F1.11 | `lib/fechas.ts`, `lib/telefono.ts` y `lib/dispositivo.ts` con pruebas de Vitest de los formatos del doc 01. Componentes base en `components/ui/` (botón, campo, chip, barra de pasos, íconos); reserva recorrida solo con teclado y sin desborde a 360 px. |

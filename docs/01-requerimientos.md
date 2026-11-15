@@ -174,7 +174,7 @@ stateDiagram-v2
 
 - **Reagendar** modifica la misma cita (mantiene su ID y su enlace de gestión), la devuelve a `pendiente` y deja constancia en el historial.
 - **No vino** solo se puede marcar después de la hora de inicio.
-- **Atendida** y **no vino** son estados finales; el dueño puede corregirlos dentro de las 24 h siguientes.
+- **Atendida** y **no vino** son estados finales; el dueño puede corregirlos dentro de las 24 h siguientes al inicio de la cita. La corrección solo cambia entre `atendida` y `no_asistio` (no vuelve a `pendiente` ni a `cancelada`) y solo la hace el rol dueño.
 - Una cita cancelada no se puede reactivar: se crea una nueva.
 
 ### RN-09 · Cliente sin confirmar
