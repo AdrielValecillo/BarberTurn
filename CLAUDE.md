@@ -42,6 +42,15 @@ Una prueba suelta: `cd apps/api && uv run pytest app/core/tests/test_eventos.py:
 
 Detalles de entorno: `app/core/config.py` trae por defecto los valores del Supabase local, así que la API arranca sin `.env`. `packages/api-types/openapi.json` y `src/schema.d.ts` se versionan y la CI falla si `openapi.json` queda distinto al regenerarlo. `tsc` en la web solo pasa después de `next build`/`next dev` (Next genera tipos como `LayoutProps`). Next 16 con Cache Components activado: lee `apps/web/node_modules/next/dist/docs/` antes de escribir código de Next (ver `apps/web/AGENTS.md`).
 
+### Supabase: usa siempre el MCP
+
+Para cualquier tarea con Supabase (local o en la nube) usa **primero el MCP de Supabase** (plugin `supabase`): crear o consultar el proyecto, obtener la URL y las llaves (`get_project_url`, `get_publishable_keys`), inspeccionar (`list_tables`, `list_migrations`, `execute_sql`), revisar (`get_advisors` después de cada cambio de esquema), leer logs y buscar en la documentación (`search_docs`). Si el MCP no responde o pide autenticación, avisa y que se autentique con `/mcp`; no lo reemplaces en silencio por otra vía.
+
+- Proyecto en la nube: `turnero`, `project_id` = `wczylbxuqqkmufxwnaig` (`us-east-1`, plan gratuito: se pausa si no se usa). `apps/api/.env` y `apps/web/.env` apuntan a él; las pruebas (`conftest.py`) siempre usan la base local.
+- Los cambios de esquema siguen yendo **solo** como archivo en `supabase/migrations/`. A la nube se aplican con `pnpm exec supabase db push --remote="<DATABASE_URL de apps/api/.env>"` (primero con `--dry-run`), **no** con `apply_migration` del MCP: este inventa su propia versión y la historia deja de coincidir con los archivos. La conexión directa (`db.<ref>.supabase.co`) solo es IPv6: usa el *Session pooler*.
+- `execute_sql` contra la nube es para leer y verificar; nada de `insert`/`update`/`delete` de datos reales sin pedirlo.
+- Nunca pongas la llave de servicio (`sb_secret_…`) ni la contraseña de la base en la web, en el repo ni en un `NEXT_PUBLIC_*`.
+
 ## Arquitectura (visión general)
 
 Monorepo: `apps/web` (Next.js, reserva pública + panel PWA), `apps/api` (FastAPI + asyncpg, **sin ORM**; la API y el worker son el mismo código/imagen con distinto comando), `packages/api-types` (generado, **no se edita a mano**; se versiona), `supabase/` (migraciones, seed, pruebas RLS). La web nunca importa código de la API: solo HTTP + tipos generados.

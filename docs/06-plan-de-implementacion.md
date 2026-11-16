@@ -36,7 +36,7 @@
 
 | Parte | Estado |
 |---|---|
-| Base de datos | Esquema, seed y pruebas pgTAP verificados en el Supabase local (F0.05). |
+| Base de datos | Esquema, seed y pruebas pgTAP verificados en el Supabase local (F0.05). En la nube: proyecto `turnero` (ref `wczylbxuqqkmufxwnaig`) con la migración y el seed; los `.env` locales de `apps/api` y `apps/web` apuntan a él (F0.13, parcial: falta Railway). |
 | API | Esqueleto (`/health`, bus de eventos, contexto RLS, errores de dominio, logs JSON, base de pruebas) y **un endpoint de negocio**: `GET /public/barberias/{slug}` (F1.01). `agenda` tiene además sus reglas puras (`rules.py`, F1.03); los otros 4 dominios están vacíos. |
 | Web | Las pantallas del diseño (`front-interface/`) están construidas con **datos de demostración**: reserva en 4 pasos, confirmación, agenda del día y detalle de cita. Ver el *Avance* de F1.12, F1.13, F2.12 y F2.13. |
 | Sesión del panel | No existe. `/panel/*` se abre sin iniciar sesión. |
@@ -81,6 +81,7 @@ En paralelo, cuando haga falta el panel real: **F0.08**, **F0.10** y **F0.14** (
 No las resuelvas por tu cuenta: pregunta antes de implementar lo que dependa de ellas.
 
 - **P-01** (nombre comercial y dominio): sigue abierta; mientras tanto el nombre provisional es "Turnero". Bloquea F0.11 (el nombre visible en Meta) y cierra F0.12.
+- **Asesores de seguridad de Supabase** (2026-11-16, ninguno bloqueante): `es_dueno` y `mi_miembro_id` (`security definer`) se pueden llamar por `/rest/v1/rpc/` también como `anon`; `set_updated_at`, `timerange` y `timemultirange` sin `search_path` fijo; `btree_gist` en `public`. ¿Se corrigen con una migración nueva antes del piloto? `rls_auto_enable` es de Supabase, no nuestra.
 
 Resueltas el 2026-11-14 (ya están en los docs): casilla obligatoria de consentimiento y política en `/privacidad` (RF-06, CU-01, F1.12); login sin crear usuarios (F0.10); worker cada minuto (doc 04 §5.2, F3.05); web en Railway desde la raíz del repo (doc 10 §11, F0.13); ADR-0007 aceptada (P-02); fragmento duplicado del doc 04 borrado.
 
@@ -367,6 +368,7 @@ Una línea por avance, con el ID del paso. Lo más reciente arriba.
 
 | Fecha | Paso | Nota |
 |---|---|---|
+| 2026-11-16 | F0.13 (parcial) | Proyecto de Supabase en la nube `turnero` (ref `wczylbxuqqkmufxwnaig`, `us-east-1`, plan gratuito, Postgres 17), creado con "Automatically expose new tables" activado: la migración cuenta con los permisos por defecto de `authenticated`. Migración inicial y seed subidos con `supabase db push --remote=<url> --include-seed`; el MCP confirma la versión `20261107000000`, las 13 tablas con RLS y `citas` en Realtime. La API se conecta por el *Session pooler* (`aws-0-us-east-1`, puerto 5432; la conexión directa solo es IPv6) y responde `/health` y `GET /public/barberias/barberia-norte` contra la nube. `conftest.py` fija `DATABASE_URL` a la base local para que las pruebas nunca usen la del `.env`. Asesores: ninguno bloqueante (ver "Preguntas abiertas"). Falta Railway. |
 | 2026-11-16 | F1.01 | `GET /public/barberias/{slug}` en `agenda/routes/public.py` (ruta → `service.py` → `queries.py`): servicios activos, barberos activos que atienden y prestan algún servicio activo, y su `proximo_turno`, que recorre la ventana de reserva con `turnos_disponibles()`. Con `?servicio=` filtra a quienes lo prestan y usa su duración; sin él, la del servicio más corto de cada barbero. Inexistente o suspendida: 404 `barberia_no_disponible` (RN-16). `core/db.conexion_servicio` es la dependencia que las pruebas sustituyen por la fixture `con` (con `httpx.ASGITransport`, en el mismo bucle de eventos). 11 pruebas de integración, incluido el aislamiento con dos barberías. Un `servicio` de otra barbería o inactivo devuelve `barberos: []` (no filtra datos ajenos). Medido en local: unos 30 ms. La web todavía no la usa (ver "Cómo está conectada la web"). |
 | 2026-11-14 | F0.07 | `core/errores.py` (`ErrorDominio` y `registrar_errores`; cuerpo `{codigo, mensaje, datos?}`) y `core/logs.py` (`FormatoJSON`, que enmascara todo E.164 en la línea completa, tracebacks incluidos; `registrar_peticiones`, con el ID de petición, una línea por petición con la plantilla de ruta y el 500 genérico; `configurar_logs`, que apaga el access log de uvicorn). `conftest.py` en la raíz de `apps/api` (no en `tests/`: así lo ven las pruebas de los dominios) con la fixture `con` y la marca `integracion`. La CI corre las de integración en `base-de-datos`. Verificado con uvicorn real: los logs salen en JSON y el token no aparece en la ruta. |
 | 2026-11-14 | F0.05 | `supabase start`, `db reset` y `test db` sin errores con el CLI 3.0.0: la migración aplica en el Postgres de Supabase y pasan las 8 pruebas pgTAP. No hizo falta cambiar nada. |
