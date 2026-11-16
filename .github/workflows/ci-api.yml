@@ -37,7 +37,11 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 3.0.0 # la misma del package.json; sin esto instala una vieja que no lee config.toml
-      - run: supabase start
+      # Las pruebas solo usan Postgres (con auth y realtime, que la migración usa): no se bajan las demás imágenes.
+      # Un -x por contenedor: el CLI 3 ignora sin avisar la lista separada por comas.
+      - run: >-
+          supabase start -x studio -x imgproxy -x storage-api -x edge-runtime -x logflare
+          -x vector -x mailpit -x postgres-meta -x kong -x postgrest
       - run: supabase test db
       - uses: astral-sh/setup-uv@v6
         with:
