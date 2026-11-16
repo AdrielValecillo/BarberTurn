@@ -8,7 +8,8 @@ from fastapi import Request
 
 # `type` se evalúa de forma perezosa: no hace falta que asyncpg sea subscriptable en tiempo de ejecución.
 type Pool = asyncpg.Pool[asyncpg.Record]
-type Conexion = asyncpg.pool.PoolConnectionProxy[asyncpg.Record]
+# La del pool en la API; una directa en las pruebas (fixture `con`).
+type Conexion = asyncpg.Connection[asyncpg.Record] | asyncpg.pool.PoolConnectionProxy[asyncpg.Record]
 
 
 async def crear_pool(dsn: str) -> Pool:

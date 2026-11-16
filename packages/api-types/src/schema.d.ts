@@ -24,6 +24,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/public/barberias/{slug}/turnos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Obtener Turnos
+         * @description Turnos libres de `fecha` (local de la barbería). Sin `miembro` es "el primero disponible" (RN-05).
+         *
+         *     Un servicio o barbero que no es de la barbería, o que no se prestan entre sí, da una lista vacía.
+         */
+        get: operations["obtener_turnos_public_barberias__slug__turnos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/citas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Crear Cita
+         * @description CU-01 · Reserva sin cuenta. El token se devuelve solo esta vez.
+         */
+        post: operations["crear_cita_public_citas_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -53,6 +95,8 @@ export interface components {
             nombre: string;
             /** Direccion */
             direccion: string;
+            /** Telefono Contacto */
+            telefono_contacto: string | null;
             /** Zona */
             zona: string;
             /** Servicios */
@@ -72,10 +116,49 @@ export interface components {
             /** Proximo Turno */
             proximo_turno: string | null;
         };
+        /** CitaCreadaPublica */
+        CitaCreadaPublica: {
+            /** Token */
+            token: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** NuevaCitaPublica */
+        NuevaCitaPublica: {
+            /** Slug */
+            slug: string;
+            /**
+             * Servicio Id
+             * Format: uuid
+             */
+            servicio_id: string;
+            /**
+             * Miembro Id
+             * Format: uuid
+             */
+            miembro_id: string;
+            /**
+             * Inicio
+             * Format: date-time
+             */
+            inicio: string;
+            /** Nombre */
+            nombre: string;
+            /** Telefono */
+            telefono: string;
+            /**
+             * Acepta Politica
+             * @constant
+             */
+            acepta_politica: true;
+            /**
+             * Acepta Marketing
+             * @default false
+             */
+            acepta_marketing: boolean;
         };
         /**
          * RespuestaError
@@ -104,6 +187,19 @@ export interface components {
             duracion_min: number;
             /** Precio Cop */
             precio_cop: number;
+        };
+        /** TurnoPublico */
+        TurnoPublico: {
+            /**
+             * Inicio
+             * Format: date-time
+             */
+            inicio: string;
+            /**
+             * Miembro Id
+             * Format: uuid
+             */
+            miembro_id: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -165,6 +261,108 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    obtener_turnos_public_barberias__slug__turnos_get: {
+        parameters: {
+            query: {
+                servicio: string;
+                fecha: string;
+                miembro?: string | null;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TurnoPublico"][];
+                };
+            };
+            /** @description No existe o está suspendida (CU-01 1a) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaError"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    crear_cita_public_citas_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NuevaCitaPublica"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CitaCreadaPublica"];
+                };
+            };
+            /** @description La barbería no existe o está suspendida (RN-16) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaError"];
+                };
+            };
+            /** @description `turno_ocupado` (CU-01 9a), `maximo_citas` (9b) o `seleccion_no_disponible` */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaError"];
+                };
+            };
+            /** @description `telefono_invalido` (CU-01 8a) o datos inválidos (sin aceptar la política, RF-06) */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Límite de reservas por IP (CU-01 9c) */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaError"];
                 };
             };
         };

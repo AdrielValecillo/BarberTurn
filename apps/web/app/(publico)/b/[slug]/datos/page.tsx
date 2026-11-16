@@ -14,7 +14,16 @@ export default function Page(props: PageProps<"/b/[slug]/datos">) {
 }
 
 async function Paso4(props: PageProps<"/b/[slug]/datos">) {
-  const { barberia, servicio, barbero, inicio, hoy } = await cargarReserva(props);
+  const { barberia, servicio, barbero, inicio, hoy, eligioPrimero } = await cargarReserva(props);
   if (!servicio || !barbero || !inicio || Number.isNaN(Date.parse(inicio))) redirect(rutaReserva(barberia.slug, ""));
-  return <FormularioDatos barberia={barberia} servicio={servicio} barbero={barbero} inicio={inicio} hoy={hoy} />;
+  return (
+    <FormularioDatos
+      barberia={barberia}
+      servicio={servicio}
+      barbero={barbero}
+      eligioPrimero={eligioPrimero}
+      inicio={inicio}
+      hoy={hoy}
+    />
+  );
 }

@@ -1,5 +1,6 @@
 """Lecturas para pantallas: pueden unir tablas de los dominios de abajo, solo para leer (doc 11)."""
 
+from datetime import date
 from uuid import UUID
 
 import asyncpg
@@ -10,7 +11,10 @@ from app.core.db import Conexion
 async def barberia_activa(con: Conexion, slug: str) -> asyncpg.Record | None:
     """RN-16: una barbería suspendida es como si no existiera para el público."""
     return await con.fetchrow(
-        "select id, slug, nombre, direccion, zona_horaria as zona from barberias where slug = $1 and estado = 'activa'",
+        """
+        select id, slug, nombre, direccion, telefono_contacto, zona_horaria as zona, max_citas_futuras_por_cliente
+        from barberias where slug = $1 and estado = 'activa'
+        """,
         slug,
     )
 
@@ -54,4 +58,32 @@ async def barberos_con_proximo_turno(
         """,
         barberia_id,
         servicio_id,
+    )
+
+
+async def turnos_libres(
+    con: Conexion, barberia_id: UUID, servicio_id: UUID, miembro_id: UUID | None, fecha: date
+) -> list[asyncpg.Record]:
+    """Cada turno libre de cada barbero que presta el servicio, con lo que RN-05 necesita para desempatar.
+
+    Filtra por barbería aquí: `turnos_disponibles()` no la mira y la conexión de servicio salta la RLS.
+    """
+    return await con.fetch(
+        """
+        select m.id as miembro_id, m.orden, t.inicio,
+          (select count(*) from citas c
+            where c.miembro_id = m.id and c.estado <> 'cancelada'
+              and (c.inicio at time zone b.zona_horaria)::date = $4)::int as citas_del_dia
+        from miembros m
+        join barberias b on b.id = m.barberia_id
+        join miembro_servicios ms on ms.barberia_id = m.barberia_id and ms.miembro_id = m.id
+        join servicios s on s.barberia_id = ms.barberia_id and s.id = ms.servicio_id
+        cross join lateral turnos_disponibles(m.id, $4, s.duracion_min) t
+        where m.barberia_id = $1 and s.id = $2 and s.activo and m.activo and m.atiende
+          and ($3::uuid is null or m.id = $3)
+        """,
+        barberia_id,
+        servicio_id,
+        miembro_id,
+        fecha,
     )

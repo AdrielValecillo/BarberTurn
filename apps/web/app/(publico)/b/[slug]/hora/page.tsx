@@ -16,12 +16,23 @@ export default function Page(props: PageProps<"/b/[slug]/hora">) {
 }
 
 async function Paso3(props: PageProps<"/b/[slug]/hora">) {
-  const { barberia, servicio, barbero, primero, fecha, hoy } = await cargarReserva(props);
+  const { barberia, servicio, barbero, primero, fecha, hoy, ocupado } = await cargarReserva(props);
   if (!servicio) redirect(rutaReserva(barberia.slug, ""));
   if (!barbero && !primero) redirect(rutaReserva(barberia.slug, "barbero", { servicio: servicio.id }));
 
   const dia = esClaveDia(fecha) && fecha >= hoy ? fecha : hoy;
   const turnos = await obtenerTurnos(barberia.slug, servicio.id, barbero?.id ?? PRIMERO, dia);
   // La clave reinicia la hora elegida al cambiar de día.
-  return <GrillaTurnos key={dia} barberia={barberia} servicio={servicio} barbero={barbero} dia={dia} hoy={hoy} turnos={turnos} />;
+  return (
+    <GrillaTurnos
+      key={dia}
+      barberia={barberia}
+      servicio={servicio}
+      barbero={barbero}
+      dia={dia}
+      hoy={hoy}
+      turnos={turnos}
+      ocupado={ocupado}
+    />
+  );
 }
