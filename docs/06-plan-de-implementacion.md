@@ -30,18 +30,18 @@
 
 ## Estado actual y siguiente paso
 
-*Actualizado: 14 de noviembre de 2026.*
+*Actualizado: 16 de noviembre de 2026.*
 
 ### Qué existe hoy
 
 | Parte | Estado |
 |---|---|
 | Base de datos | Esquema, seed y pruebas pgTAP verificados en el Supabase local (F0.05). |
-| API | Solo el esqueleto: `/health`, bus de eventos, contexto RLS, errores de dominio, logs JSON y base de pruebas con `conftest.py` (F0.07). **Ningún endpoint de negocio.** `agenda` tiene sus reglas puras (`rules.py`, F1.03); los otros 4 dominios están vacíos. |
+| API | Esqueleto (`/health`, bus de eventos, contexto RLS, errores de dominio, logs JSON, base de pruebas) y **un endpoint de negocio**: `GET /public/barberias/{slug}` (F1.01). `agenda` tiene además sus reglas puras (`rules.py`, F1.03); los otros 4 dominios están vacíos. |
 | Web | Las pantallas del diseño (`front-interface/`) están construidas con **datos de demostración**: reserva en 4 pasos, confirmación, agenda del día y detalle de cita. Ver el *Avance* de F1.12, F1.13, F2.12 y F2.13. |
 | Sesión del panel | No existe. `/panel/*` se abre sin iniciar sesión. |
 | CI | `ci-web` pasa. En `ci-api` el job `base-de-datos` fallaba en `supabase start`; el arreglo (CLI fijado en 3.0.0) entró por el PR #4 y falta verla en verde. Ver F0.03. |
-| Ramas | Todo está en `main` (PR #1 a #4). |
+| Ramas | `main` tiene hasta el PR #5 (F0.07). F1.01 está en `feat/f1-01-datos-publicos`. |
 
 ### Cómo está conectada la web a los datos
 
@@ -53,10 +53,13 @@ Para conectar un endpoint:
 2. Cambia **solo** la función correspondiente de `api.ts` para que use `api` de `lib/api-client.ts`. No cambies su firma ni sus tipos; si el contrato tiene que cambiar, ajusta también las pantallas que la usan.
 3. Borra de `demo.ts` lo que dejó de usarse. Cuando quede vacío, borra el archivo y el comentario `shortcut:` de `api.ts`.
 
-El contrato que esperan las pantallas está en los tipos de `api.ts`. Hay dos puntos fáciles de pasar por alto:
+El contrato que esperan las pantallas está en los tipos de `api.ts`. Hay tres puntos fáciles de pasar por alto:
 
 - `Turno.barberoId`: con "El primero disponible" la API debe decir, en cada turno, qué barbero lo atiende (RN-05). La web lo pasa a la URL del paso 4.
-- `Barbero.proximoTurno`: `GET /public/barberias/{slug}` debe devolver el próximo turno de cada barbero (F1.01).
+- La API responde en `snake_case` (`duracion_min`, `proximo_turno`) y `api.ts` lo convierte a los tipos de las pantallas.
+- `GET /public/barberias/{slug}` acepta `?servicio=`: con él solo devuelve a los barberos que lo prestan y calcula `proximo_turno` con su duración (RF-03). `cargarReserva` debe pasar el servicio de la URL. Un `servicio` que no es UUID responde 422.
+
+`obtenerBarberia` **todavía no está conectada**: la API devuelve IDs reales (UUID) y `demo.turnos` y `demo.crearCita` solo conocen los IDs de la demo ("carlos"), así que conectarla sola rompería los pasos 3 y 4. Se conecta junto con F1.04.
 
 Las búsquedas de `shortcut:` en `apps/web` listan cada atajo pendiente.
 
@@ -65,8 +68,8 @@ Las búsquedas de `shortcut:` en `apps/web` listan cada atajo pendiente.
 Es el camino crítico para que un cliente reserve de verdad. Las pruebas de integración necesitan Docker en ejecución (`make dev-db`).
 
 1. **F0.03**: confirmar que `ci-api` pasa en verde: el CLI fijado en 3.0.0 y el job `base-de-datos`, que ahora también corre `pytest -m integracion`.
-2. **F1.02**: falta `clientes.registrar` y los consentimientos (la versión del texto es una constante del dominio). El teléfono (`shared/telefono.py`) y F1.03 ya están.
-3. **F1.01** y **F1.04**: conectar los pasos 1 a 3 de la reserva.
+2. **F1.04**, y conectar los pasos 1 a 3 de la reserva (`obtenerBarberia` y `obtenerTurnos`). F1.01 ya está hecho.
+3. **F1.02**: falta `clientes.registrar` y los consentimientos (la versión del texto es una constante del dominio). El teléfono (`shared/telefono.py`) y F1.03 ya están.
 4. **F1.05** y **F1.06**: conectar el paso 4 y los errores 9a, 9b y 9c (ver el *Avance* de F1.12).
 5. **F1.08**: el `.ics` (el botón de la confirmación ya apunta a esa ruta). Luego **F1.07** y **F1.14**: gestión con el token.
 6. **F1.09** y **F1.15**: aislamiento de `/public/*` y E2E con Playwright. **Cierran F1.**
@@ -174,7 +177,7 @@ F0 ──► F1 ──► F2 ──┐
 
 ### API
 
-- [ ] **F1.01 · Datos públicos de la barbería** — `GET /public/barberias/{slug}`: nombre, dirección, servicios activos con duración y precio, y barberos que atienden con su próximo turno. Una barbería inexistente o suspendida responde "no disponible". Ojo con las capas: `barberias` no puede depender de `agenda`, así que el cálculo del "próximo turno" hace que este endpoint viva en `agenda/routes/public.py`.
+- [x] **F1.01 · Datos públicos de la barbería** — `GET /public/barberias/{slug}`: nombre, dirección, servicios activos con duración y precio, y barberos que atienden con su próximo turno. Una barbería inexistente o suspendida responde "no disponible". Ojo con las capas: `barberias` no puede depender de `agenda`, así que el cálculo del "próximo turno" hace que este endpoint viva en `agenda/routes/public.py`.
   *Cubre:* RF-01, RF-03, RN-16, CU-01 · *Listo cuando:* devuelve los datos del seed y una prueba confirma que un slug nunca devuelve datos de otra barbería.
 - [ ] **F1.02 · Teléfono, clientes y consentimientos** — `shared/telefono.py` (normalizar a E.164, +57 por defecto), `clientes.registrar` (alta o actualización por `(barberia, teléfono)`, el nombre queda con el último usado) y registro de consentimientos con la versión del texto aceptado.
   ***Avance:*** `shared/telefono.py` (`normalizar`) hecho, con los mismos casos que la web (solo celulares de Colombia; dígitos no ASCII rechazados). **Falta:** `clientes.registrar` y los consentimientos, que necesitan la base (F0.05, F0.07).
@@ -364,6 +367,7 @@ Una línea por avance, con el ID del paso. Lo más reciente arriba.
 
 | Fecha | Paso | Nota |
 |---|---|---|
+| 2026-11-16 | F1.01 | `GET /public/barberias/{slug}` en `agenda/routes/public.py` (ruta → `service.py` → `queries.py`): servicios activos, barberos activos que atienden y prestan algún servicio activo, y su `proximo_turno`, que recorre la ventana de reserva con `turnos_disponibles()`. Con `?servicio=` filtra a quienes lo prestan y usa su duración; sin él, la del servicio más corto de cada barbero. Inexistente o suspendida: 404 `barberia_no_disponible` (RN-16). `core/db.conexion_servicio` es la dependencia que las pruebas sustituyen por la fixture `con` (con `httpx.ASGITransport`, en el mismo bucle de eventos). 11 pruebas de integración, incluido el aislamiento con dos barberías. Un `servicio` de otra barbería o inactivo devuelve `barberos: []` (no filtra datos ajenos). Medido en local: unos 30 ms. La web todavía no la usa (ver "Cómo está conectada la web"). |
 | 2026-11-14 | F0.07 | `core/errores.py` (`ErrorDominio` y `registrar_errores`; cuerpo `{codigo, mensaje, datos?}`) y `core/logs.py` (`FormatoJSON`, que enmascara todo E.164 en la línea completa, tracebacks incluidos; `registrar_peticiones`, con el ID de petición, una línea por petición con la plantilla de ruta y el 500 genérico; `configurar_logs`, que apaga el access log de uvicorn). `conftest.py` en la raíz de `apps/api` (no en `tests/`: así lo ven las pruebas de los dominios) con la fixture `con` y la marca `integracion`. La CI corre las de integración en `base-de-datos`. Verificado con uvicorn real: los logs salen en JSON y el token no aparece en la ruta. |
 | 2026-11-14 | F0.05 | `supabase start`, `db reset` y `test db` sin errores con el CLI 3.0.0: la migración aplica en el Postgres de Supabase y pasan las 8 pruebas pgTAP. No hizo falta cambiar nada. |
 | 2026-11-14 | Decisiones | Cerradas las preguntas abiertas del plan: casilla obligatoria de consentimiento (RF-06), login sin crear usuarios (F0.10), worker cada minuto (RNF-06), web en Railway desde la raíz del repo, ADR-0007 aceptada (P-02) y diseño de F0.07. Sigue abierta P-01. |

@@ -170,7 +170,6 @@ apps/api/
 │       │   ├── repo.py
 │       │   ├── schemas.py
 │       │   ├── routes/
-│       │   │   ├── public.py           # Datos públicos de la barbería
 │       │   │   ├── panel.py            # Ajustes, servicios, equipo, reglas
 │       │   │   └── admin.py            # Alta y suspensión de barberías
 │       │   └── tests/
@@ -195,7 +194,7 @@ apps/api/
 │       │   ├── events.py               # CitaCreada, CitaReagendada, CitaCancelada
 │       │   ├── schemas.py
 │       │   ├── routes/
-│       │   │   ├── public.py           # Turnos, crear cita, gestión con token, .ics
+│       │   │   ├── public.py           # Datos públicos de la barbería (con el próximo turno), turnos, crear cita, gestión con token, .ics
 │       │   │   └── panel.py            # Agenda, acciones, citas manuales, bloqueos, horarios
 │       │   └── tests/
 │       ├── notificaciones/             # Soporte · depende de agenda, clientes y barberias

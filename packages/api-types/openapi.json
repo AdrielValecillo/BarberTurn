@@ -5,6 +5,76 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/public/barberias/{slug}": {
+      "get": {
+        "tags": [
+          "público"
+        ],
+        "summary": "Obtener Barberia",
+        "description": "Con `servicio`, solo los barberos que lo prestan y su próximo turno para ese servicio (RF-03).",
+        "operationId": "obtener_barberia_public_barberias__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          },
+          {
+            "name": "servicio",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Servicio"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BarberiaPublica"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o está suspendida (CU-01 1a)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -25,6 +95,199 @@
             }
           }
         }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BarberiaPublica": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "direccion": {
+            "type": "string",
+            "title": "Direccion"
+          },
+          "zona": {
+            "type": "string",
+            "title": "Zona"
+          },
+          "servicios": {
+            "items": {
+              "$ref": "#/components/schemas/ServicioPublico"
+            },
+            "type": "array",
+            "title": "Servicios"
+          },
+          "barberos": {
+            "items": {
+              "$ref": "#/components/schemas/BarberoPublico"
+            },
+            "type": "array",
+            "title": "Barberos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "nombre",
+          "direccion",
+          "zona",
+          "servicios",
+          "barberos"
+        ],
+        "title": "BarberiaPublica"
+      },
+      "BarberoPublico": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "proximo_turno": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proximo Turno"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "proximo_turno"
+        ],
+        "title": "BarberoPublico"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "RespuestaError": {
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "title": "Codigo"
+          },
+          "mensaje": {
+            "type": "string",
+            "title": "Mensaje"
+          },
+          "datos": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "codigo",
+          "mensaje"
+        ],
+        "title": "RespuestaError",
+        "description": "Cuerpo de todo error de dominio. La web decide con `codigo`; `mensaje` se puede mostrar tal cual."
+      },
+      "ServicioPublico": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "nombre": {
+            "type": "string",
+            "title": "Nombre"
+          },
+          "duracion_min": {
+            "type": "integer",
+            "title": "Duracion Min"
+          },
+          "precio_cop": {
+            "type": "integer",
+            "title": "Precio Cop"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "nombre",
+          "duracion_min",
+          "precio_cop"
+        ],
+        "title": "ServicioPublico"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }

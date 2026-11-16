@@ -280,7 +280,7 @@ FastAPI genera la especificación OpenAPI completa en `/docs`. Este es el mapa g
 
 | Método y ruta | Descripción | CU |
 |---|---|---|
-| `GET /public/barberias/{slug}` | Datos, servicios y barberos con su próximo turno. | CU-01 |
+| `GET /public/barberias/{slug}?servicio` | Datos, servicios y barberos con su próximo turno (con `servicio`, solo quienes lo prestan). | CU-01 |
 | `GET /public/barberias/{slug}/turnos?servicio&miembro&fecha` | Turnos libres (`miembro` vacío = el primero disponible). | CU-01 |
 | `POST /public/citas` | Crear una cita. | CU-01 |
 | `GET /public/citas/{token}` | Ver una cita. | CU-02 |

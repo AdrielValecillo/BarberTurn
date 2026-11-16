@@ -9,6 +9,7 @@ from app.core.config import get_settings
 from app.core.db import crear_pool
 from app.core.errores import ErrorDominio, registrar_errores
 from app.core.logs import configurar_logs, registrar_peticiones
+from app.domains.agenda.routes import public as agenda_public
 
 configurar_logs()
 settings = get_settings()
@@ -34,6 +35,8 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],  # para que la web pueda citarlo al reportar un error
 )
+
+app.include_router(agenda_public.router)
 
 
 @app.get("/health")
