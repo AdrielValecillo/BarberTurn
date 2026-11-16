@@ -110,8 +110,8 @@ flowchart LR
 4. El cliente elige un barbero.
 5. El sistema muestra los próximos días y los turnos libres del día seleccionado, agrupados en mañana, tarde y noche.
 6. El cliente elige un turno.
-7. El sistema muestra el resumen (servicio, barbero, fecha y hora, dirección, precio) y pide nombre y WhatsApp, junto con la aceptación de la política de datos y la casilla opcional de "próximo corte".
-8. El cliente completa los datos y toca "Confirmar reserva".
+7. El sistema muestra el resumen (servicio, barbero, fecha y hora, dirección, precio) y pide nombre y WhatsApp, junto con la casilla obligatoria de la política de datos (desmarcada, con enlace a `/privacidad`) y la casilla opcional de "próximo corte".
+8. El cliente completa los datos, marca la casilla de la política y toca "Confirmar reserva". El botón queda deshabilitado mientras la casilla obligatoria esté desmarcada.
 9. El sistema valida de nuevo el turno, registra o actualiza al cliente, crea la cita, guarda los consentimientos, programa las notificaciones (RN-07) y le avisa al barbero.
 10. El sistema muestra la confirmación con "Agregar a mi calendario" y "Cómo llegar", y guarda en el dispositivo el nombre, el teléfono y el último servicio.
 

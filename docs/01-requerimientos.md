@@ -27,7 +27,7 @@
 | RF-03 | El cliente selecciona un barbero que preste ese servicio, o la opción "El primero disponible" (RN-05). Cada barbero muestra su próximo turno. | M |
 | RF-04 | El sistema muestra los días y horas disponibles según el horario del barbero, la duración del servicio, las citas existentes, los bloqueos y las reglas de anticipación (RN-03, RN-04). | M |
 | RF-05 | El cliente confirma la reserva ingresando solo su nombre y su número de WhatsApp, sin crear cuenta. | M |
-| RF-06 | Al reservar, el cliente acepta la política de tratamiento de datos. El sistema guarda la autorización con fecha y versión del texto. | M |
+| RF-06 | Al reservar, el cliente acepta la política de tratamiento de datos con una **casilla obligatoria, desmarcada**, que enlaza a la política (`/privacidad`); sin marcarla no puede confirmar. El sistema guarda la autorización con fecha y versión del texto. La versión la pone la API (la vigente al reservar), no la web. | M |
 | RF-07 | El formulario incluye una casilla opcional, **desmarcada por defecto**, para recibir avisos de "próximo corte". El sistema guarda la decisión. | S |
 | RF-08 | Tras reservar, el sistema muestra una confirmación con botones "Agregar a mi calendario" (archivo .ics) y "Cómo llegar" (enlace de mapa). | M |
 | RF-09 | Si el dispositivo ya reservó antes en esa barbería, el sistema ofrece "Repetir mi último corte" y prellena nombre y teléfono. El dato se guarda **solo en el dispositivo** del cliente: nunca se muestra el historial de alguien a partir de un teléfono escrito. | S |

@@ -1,6 +1,6 @@
 # ADR-0007 · Stack: Next.js, FastAPI y Railway
 
-- **Estado:** Propuesta (al aceptarla se cierran P-02 y P-03 del doc 00)
+- **Estado:** Aceptada el 2026-11-14. Cierra P-02 del doc 00. El plan de producción de P-03 (pago o VPS) se decide en F4.02.
 - **Fecha:** 2026-11-07
 - **Relacionado con:** RNF-15, RNF-16
 
