@@ -36,12 +36,12 @@
 
 | Parte | Estado |
 |---|---|
-| Base de datos | Esquema, seed y pruebas pgTAP verificados en PostgreSQL 16, **no** en Supabase local (F0.05). |
-| API | Solo el esqueleto: `/health`, bus de eventos y contexto RLS. **Ningún endpoint de negocio.** `agenda` tiene sus reglas puras (`rules.py`, F1.03); los otros 4 dominios están vacíos. |
+| Base de datos | Esquema, seed y pruebas pgTAP verificados en el Supabase local (F0.05). |
+| API | Solo el esqueleto: `/health`, bus de eventos, contexto RLS, errores de dominio, logs JSON y base de pruebas con `conftest.py` (F0.07). **Ningún endpoint de negocio.** `agenda` tiene sus reglas puras (`rules.py`, F1.03); los otros 4 dominios están vacíos. |
 | Web | Las pantallas del diseño (`front-interface/`) están construidas con **datos de demostración**: reserva en 4 pasos, confirmación, agenda del día y detalle de cita. Ver el *Avance* de F1.12, F1.13, F2.12 y F2.13. |
 | Sesión del panel | No existe. `/panel/*` se abre sin iniciar sesión. |
-| CI | `ci-web` pasa. `ci-api` falla en el job `base-de-datos`, en el paso `supabase start` (el job `api` pasa). Ver F0.03. |
-| Ramas | Todo está en `main`. Las pantallas entraron por el PR #1; el plan y el PDF del diseño, directo en `main`. |
+| CI | `ci-web` pasa. En `ci-api` el job `base-de-datos` fallaba en `supabase start`; el arreglo (CLI fijado en 3.0.0) entró por el PR #4 y falta verla en verde. Ver F0.03. |
+| Ramas | Todo está en `main` (PR #1 a #4). |
 
 ### Cómo está conectada la web a los datos
 
@@ -62,16 +62,14 @@ Las búsquedas de `shortcut:` en `apps/web` listan cada atajo pendiente.
 
 ### Siguientes pasos, en orden
 
-Es el camino crítico para que un cliente reserve de verdad. Los pasos 1 a 3 no necesitan Docker.
+Es el camino crítico para que un cliente reserve de verdad. Las pruebas de integración necesitan Docker en ejecución (`make dev-db`).
 
-1. **F0.03**: corregir el job `base-de-datos` de `ci-api`, que falla en `supabase start`.
-2. **F1.02**: falta `clientes.registrar` y los consentimientos; necesitan la base, así que van después de F0.05 y F0.07. El teléfono (`shared/telefono.py`) y F1.03 ya están.
-3. **F0.07**: errores de dominio (el 409 de turno ocupado), logs y `conftest.py`.
-4. **F0.05**: levantar Supabase local. **Necesita Docker en ejecución.**
-5. **F1.01** y **F1.04**: conectar los pasos 1 a 3 de la reserva.
-6. **F1.05** y **F1.06**: conectar el paso 4 y los errores 9a, 9b y 9c (ver el *Avance* de F1.12).
-7. **F1.08**: el `.ics` (el botón de la confirmación ya apunta a esa ruta). Luego **F1.07** y **F1.14**: gestión con el token.
-8. **F1.09** y **F1.15**: aislamiento de `/public/*` y E2E con Playwright. **Cierran F1.**
+1. **F0.03**: confirmar que `ci-api` pasa en verde: el CLI fijado en 3.0.0 y el job `base-de-datos`, que ahora también corre `pytest -m integracion`.
+2. **F1.02**: falta `clientes.registrar` y los consentimientos (la versión del texto es una constante del dominio). El teléfono (`shared/telefono.py`) y F1.03 ya están.
+3. **F1.01** y **F1.04**: conectar los pasos 1 a 3 de la reserva.
+4. **F1.05** y **F1.06**: conectar el paso 4 y los errores 9a, 9b y 9c (ver el *Avance* de F1.12).
+5. **F1.08**: el `.ics` (el botón de la confirmación ya apunta a esa ruta). Luego **F1.07** y **F1.14**: gestión con el token.
+6. **F1.09** y **F1.15**: aislamiento de `/public/*` y E2E con Playwright. **Cierran F1.**
 
 En paralelo, cuando haga falta el panel real: **F0.08**, **F0.10** y **F0.14** (sesión), y después **F2.01** a **F2.03** para conectar la agenda y el detalle.
 
@@ -79,12 +77,9 @@ En paralelo, cuando haga falta el panel real: **F0.08**, **F0.10** y **F0.14** (
 
 No las resuelvas por tu cuenta: pregunta antes de implementar lo que dependa de ellas.
 
-- **Consentimiento de datos (RF-06):** el paso 4 dice "Al confirmar aceptas la política de tratamiento de datos". ¿Basta ese texto o tiene que ser una casilla? ¿Dónde se publica la política?
-- **Login del panel (F0.10):** cómo evitar que el inicio de sesión cree usuarios nuevos sin revelar qué correos existen.
-- **Ritmo del worker:** cada minuto (CU-13, doc 03) o cada 5 minutos (doc 04 §5.2). Lo necesita F3.05.
-- **Despliegue de la web en Railway:** con la carpeta raíz `apps/web` no ve `packages/api-types` (F0.13).
-- **Doc 04:** sobra un fragmento de tabla duplicado (líneas ~103–116).
-- **P-01 y P-02** (nombre comercial y ADR-0007): F0.12.
+- **P-01** (nombre comercial y dominio): sigue abierta; mientras tanto el nombre provisional es "Turnero". Bloquea F0.11 (el nombre visible en Meta) y cierra F0.12.
+
+Resueltas el 2026-11-14 (ya están en los docs): casilla obligatoria de consentimiento y política en `/privacidad` (RF-06, CU-01, F1.12); login sin crear usuarios (F0.10); worker cada minuto (doc 04 §5.2, F3.05); web en Railway desde la raíz del repo (doc 10 §11, F0.13); ADR-0007 aceptada (P-02); fragmento duplicado del doc 04 borrado.
 
 ---
 
@@ -132,15 +127,20 @@ F0 ──► F1 ──► F2 ──┐
 ### Base de datos
 
 - [x] **F0.04 · Migración inicial, seed y pruebas de base** — `20261107000000_esquema_inicial.sql` (doc 04 §4), `seed.sql` (una barbería, dos barberos, servicios y horarios) y pruebas pgTAP de RLS de citas y del anti-solape. Verificado en PostgreSQL 16 con un shim de pgTAP.
-  *Cubre:* RNF-05, RNF-08, DM-01 a DM-11 · *Listo cuando:* aplica sin errores y las pruebas pasan (cumplido en una base de prueba; falta Supabase real, F0.05).
-- [ ] **F0.05 · Verificar contra Supabase local** — `make dev-db`, `make db-reset` y `pnpm exec supabase test db`. Confirma que la migración aplica en el Postgres de Supabase (esquema `auth`, roles, publicación `supabase_realtime`) y que las pruebas pasan con pgTAP real.
+  *Cubre:* RNF-05, RNF-08, DM-01 a DM-11 · *Listo cuando:* aplica sin errores y las pruebas pasan (cumplido; en Supabase real desde F0.05).
+- [x] **F0.05 · Verificar contra Supabase local** — `make dev-db`, `make db-reset` y `pnpm exec supabase test db`. Confirma que la migración aplica en el Postgres de Supabase (esquema `auth`, roles, publicación `supabase_realtime`) y que las pruebas pasan con pgTAP real.
   *Listo cuando:* los tres comandos terminan sin errores. **Este paso cierra el "migración aplicada" de la fase.**
 
 ### API
 
 - [x] **F0.06 · Esqueleto de la API** — configuración, pool de asyncpg, contexto RLS por petición (`transaccion_panel`, ADR-0008), bus de eventos, `/health`, worker vacío, contratos de import-linter y `Dockerfile`.
   *Cubre:* ADR-0008, ADR-0009 · *Listo cuando:* ruff, mypy, import-linter y pytest pasan.
-- [ ] **F0.07 · Errores, logs y base de pruebas** — `core/errores.py` (errores de dominio con su respuesta HTTP: 404, 409 "turno ocupado"…), `core/logs.py` (JSON con ID de petición y teléfonos enmascarados `+57300***4567`) y `tests/conftest.py` con una base de prueba que tiene las migraciones aplicadas. Sentry puede quedar para F4.
+- [x] **F0.07 · Errores, logs y base de pruebas** — `core/errores.py` (errores de dominio con su respuesta HTTP), `core/logs.py` (JSON con ID de petición y teléfonos enmascarados `+57300***4567`) y `conftest.py` (en la raíz de `apps/api`) con una base de prueba que tiene las migraciones aplicadas. Sentry queda para F4.05.
+  *Decidido (2026-11-14):*
+  - Errores: `core/errores.py` tiene la base `ErrorDominio(status, codigo, mensaje, datos)`, la función `respuesta()` y el manejador, que se registra en `main.py`. El cuerpo es `{codigo, mensaje, datos?}`, también en el 503 de `/health`. Cada error concreto (`TurnoOcupado`…) vive en su dominio, y cada dominio traduce su `23P01` (`citas_sin_solape` y `horarios_sin_solape` dan mensajes distintos), sin traducción global. Los 422 de Pydantic quedan con el formato de FastAPI. Cualquier otra excepción responde `500 {codigo: "error_interno"}`, y el traceback va solo al log.
+  - Logs: `logging` estándar con un formateador JSON propio, sin dependencias nuevas, siempre en JSON y con nivel INFO. `configurar_logs()` se llama desde `main.py` y `worker.py`. El ID de petición sale de `X-Request-ID` (o se genera un `uuid4`), viaja en un `contextvar` y se devuelve en el header (CORS lo expone a la web). El formateador enmascara todo teléfono de 10 a 15 dígitos, con `+` o sin él (el `wa_id` de Meta llega sin `+`): `+57300***4567`. Hay una línea por petición con la **plantilla** de ruta, nunca la ruta real (lleva el token de gestión), y el access log de uvicorn se apaga siempre, también en desarrollo.
+  - Pruebas: se usa el Supabase local (`DATABASE_URL`) en desarrollo y en la CI. La fixture `con` abre una transacción con rollback sobre los datos del seed. Si falta el esquema, la prueba falla con "corre `make db-reset`" en lugar de saltarse. Las pruebas de integración llevan `@pytest.mark.integracion`: el job `api` corre las demás y `base-de-datos` corre estas tras `supabase start`. La fixture que confirma cambios (`pool_real`) llega con la prueba de concurrencia de F1.05, y la sustitución de dependencias de rutas, con F1.01.
+
   *Cubre:* RNF-16, RNF-17, doc 03 §7.2 y §11 · *Listo cuando:* una prueba de integración corre contra la base local con las migraciones.
 - [ ] **F0.08 · Verificación del JWT y miembro actual** — `core/auth.py` verifica el JWT de Supabase (según cómo firme el proyecto: secreto o JWKS; agrega `pyjwt`). `barberias/acceso.py` expone `miembro_actual`, la dependencia que abre `transaccion_panel` y resuelve miembro y rol. Primer endpoint protegido: `GET /panel/barberia`.
   *Cubre:* RF-22, RNF-08, ADR-0008 · *Listo cuando:* el endpoint responde 401 sin JWT, devuelve la barbería con uno válido y una prueba confirma que un usuario de otra barbería no ve nada.
@@ -149,7 +149,7 @@ F0 ──► F1 ──► F2 ──┐
 
 - [x] **F0.09 · Esqueleto de la web** — Next.js, manifest de la PWA, cliente HTTP tipado (`openapi-fetch` + `@turnero/api-types`), Vitest y la regla de ESLint que impide que un dominio importe a otro.
   *Cubre:* RF-31 (base), doc 11 §8 · *Listo cuando:* `pnpm --filter web lint`, `test` y `build` pasan.
-- [ ] **F0.10 · Inicio de sesión del panel** — cliente de Supabase (`lib/supabase/cliente.ts` y `servidor.ts`; `@supabase/supabase-js` y `@supabase/ssr`), `/panel/login` (correo → enlace o código), layout protegido que verifica la sesión y cierre de sesión. El mensaje es siempre "Si el correo está registrado, te llegará un enlace". Hay que decidir cómo evitar que el login cree usuarios nuevos sin revelar qué correos existen.
+- [ ] **F0.10 · Inicio de sesión del panel** — cliente de Supabase (`lib/supabase/cliente.ts` y `servidor.ts`; `@supabase/supabase-js` y `@supabase/ssr`), `/panel/login` (correo → enlace o código), layout protegido que verifica la sesión y cierre de sesión. El mensaje es siempre "Si el correo está registrado, te llegará un enlace". Para no crear usuarios ni revelar qué correos existen, una server action llama a `signInWithOtp({ email, options: { shouldCreateUser: false } })`, descarta el error de "usuario no existe" y responde siempre ese mensaje. Los usuarios solo se crean en el alta (F0.14 y F2.10).
   *Cubre:* RF-22, CU-06 · *Listo cuando:* el enlace llega al servidor de correo de prueba (`http://127.0.0.1:54324`) y abre una sesión.
 
 ### Trámite con Meta, decisiones y entornos
@@ -157,8 +157,9 @@ F0 ──► F1 ──► F2 ──┐
 - [ ] **F0.11 · Iniciar el trámite con Meta** — cuenta de negocio y app de WhatsApp Cloud API, número de prueba y registro del número real (el nombre visible debe coincidir con la web, por eso depende de P-01). Las plantillas se redactan en F3.01 y se envían a aprobación como categoría *utilidad*, sin lenguaje promocional.
   *Cubre:* ADR-0001, riesgos del doc 00 §9 · *Listo cuando:* el trámite está iniciado y el número de prueba envía un mensaje a mano. No hace falta que esté aprobado.
 - [ ] **F0.12 · Cerrar decisiones pendientes** — P-01 (nombre comercial y dominio) y P-02 (aceptar el ADR-0007, que pasa de *Propuesta* a *Aceptada*). Registrarlo en el doc 00 §7 y en el índice de ADR del doc 03.
+  ***Avance:*** P-02 cerrada: ADR-0007 aceptada el 2026-11-14 (D-07 en el doc 00). **Falta:** P-01.
   *Listo cuando:* ambas decisiones están escritas en los docs.
-- [ ] **F0.13 · Entornos en la nube** — proyecto de Supabase (el gratuito sirve para desarrollo, pero se pausa) y proyecto de Railway con los servicios `web`, `api` y `worker`. Resolver antes el problema del servicio `web`: con carpeta raíz `apps/web` no ve `packages/api-types` (dependencia `workspace:*`), así que hay que usar la raíz del repo con comandos propios o un Dockerfile. Meta necesita una URL pública para el webhook, por lo que esto debe estar antes de F3.09.
+- [ ] **F0.13 · Entornos en la nube** — proyecto de Supabase (el gratuito sirve para desarrollo, pero se pausa) y proyecto de Railway con los servicios `web`, `api` y `worker`. El servicio `web` usa la raíz del repo con comandos propios, porque con la carpeta raíz `apps/web` no vería `packages/api-types` (doc 10 §11). Meta necesita una URL pública para el webhook, por lo que esto debe estar antes de F3.09.
   *Cubre:* doc 10 §11, RNF-14 · *Listo cuando:* web y API están desplegadas y `/health` responde contra la base en la nube.
 - [ ] **F0.14 · Alta del primer dueño y vinculación** — una forma manual de crear una barbería y su primer dueño por correo (script o SQL; el endpoint de administración llega en F2.10). Al primer ingreso, la API vincula `miembros.user_id` con el usuario autenticado usando el correo del JWT y la conexión de servicio, porque antes de vincular la RLS no reconoce al miembro.
   *Cubre:* CU-06 paso 4, CU-15 · *Listo cuando:* un dueño recibe el enlace, entra y la API lo reconoce como dueño. **Este paso cierra el "un dueño puede iniciar sesión" de la fase.**
@@ -201,7 +202,7 @@ F0 ──► F1 ──► F2 ──┐
   *Cubre:* RNF-02, RNF-03 · *Listo cuando:* se usan en la reserva y se pueden operar con teclado.
 - [ ] **F1.12 · Reserva en 4 pasos** — rutas `/b/[slug]` → `barbero` → `hora` → `datos`, con el estado en la URL (`?servicio=…&barbero=…&fecha=…`) para que "atrás" y recargar funcionen. Incluye "Repetir mi último corte", los errores de teléfono inválido, de máximo de citas y de límite por IP, el aviso "Ese horario se acaba de ocupar" (vuelve a la hora sin borrar nombre ni teléfono) y la página "no disponible".
   *Cubre:* RF-01 a RF-09, CU-01, RNF-01 · *Listo cuando:* se completa una reserva real contra la API local.
-  ***Avance:*** hechos los 4 pasos en `domains/agenda/reserva/` con datos de demostración: estado en la URL, "Repetir mi último corte" y "Te atendió la última vez" (`lib/dispositivo.ts`), teléfono inválido (8a), "no disponible" (1a) y día sin turnos. **Falta:** conectar F1.01, F1.04 y F1.05; distinguir los errores de `crearCita`, que hoy muestran un solo mensaje genérico. Para 9a hay que volver al paso 3 sin perder nombre ni teléfono: hoy el formulario se rellena solo desde el dispositivo, así que hace falta guardarlos antes de salir. También faltan 9b (máximo de citas, sin mostrar detalles), 9c (límite por IP), 5a (sin turnos en toda la ventana: mostrar el contacto de la barbería) y la decisión sobre el texto de consentimiento (ver las preguntas abiertas).
+  ***Avance:*** hechos los 4 pasos en `domains/agenda/reserva/` con datos de demostración: estado en la URL, "Repetir mi último corte" y "Te atendió la última vez" (`lib/dispositivo.ts`), teléfono inválido (8a), "no disponible" (1a) y día sin turnos. **Falta:** conectar F1.01, F1.04 y F1.05; distinguir los errores de `crearCita`, que hoy muestran un solo mensaje genérico. Para 9a hay que volver al paso 3 sin perder nombre ni teléfono: hoy el formulario se rellena solo desde el dispositivo, así que hace falta guardarlos antes de salir. También faltan 9b (máximo de citas, sin mostrar detalles), 9c (límite por IP), 5a (sin turnos en toda la ventana: mostrar el contacto de la barbería) y las casillas de consentimiento al conectar F1.05 (RF-06): la de la política es obligatoria y está desmarcada, enlaza a `/privacidad` y deja "Confirmar" deshabilitado mientras no se marque; la de marketing es opcional y también está desmarcada. `/privacidad` queda como pantalla "pendiente" hasta F4.04. La versión del texto la registra la API con una constante del dominio `clientes`, no la web.
 - [ ] **F1.13 · Confirmación** — `/b/[slug]/listo`: resumen, "Agregar a mi calendario" (.ics), "Cómo llegar" (enlace de mapa) y guardado de los datos en el dispositivo.
   *Cubre:* RF-08, CU-01 paso 10 · *Listo cuando:* ambos botones funcionan en un celular.
   ***Avance:*** pantalla hecha (`reserva/confirmacion.tsx`), con el guardado en el dispositivo. "Cómo llegar" abre Google Maps con la dirección. **Falta:** "Agregar a mi calendario" apunta a `{API}/public/citas/{token}/calendario.ics`, que no existe hasta F1.08. Hoy la página lee servicio, barbero, hora y token de la URL; con la API conviene leer la cita por el token, para no confiar en lo que trae la URL.
@@ -295,7 +296,7 @@ F0 ──► F1 ──► F2 ──┐
   *Cubre:* RF-13 a RF-15, RF-18, RN-07, RN-09 · *Listo cuando:* pruebas de tabla con los ejemplos del doc 01 §4 (cita del jueves 6:40 p. m. y cita de hoy a la 1:00 p. m.).
 - [ ] **F3.04 · Manejadores de eventos** — `handlers.py` escucha `CitaCreada` (programa las notificaciones), `CitaReagendada` (anula las pendientes y reprograma) y `CitaCancelada` (anula y avisa al barbero o al cliente), todo en la transacción de la agenda. No se programan mensajes para clientes sin teléfono o sin autorización (RN-17). `main.py` y `worker.py` importan los manejadores al arrancar.
   *Cubre:* RF-18, RF-20, RN-17 · *Listo cuando:* crear una cita deja filas en `notificaciones`, reagendar deja las anteriores en `anulada` y repetir el evento no duplica filas.
-- [ ] **F3.05 · Worker de envío** — `envio.py`: toma un lote vencido con `FOR UPDATE SKIP LOCKED`, comprueba que siga aplicando (la cita activa; "sin confirmar" solo si sigue `pendiente`), arma la plantilla, la envía, guarda el `wamid` y pasa a `enviada`. Error temporal: vuelve a `pendiente` unos minutos después, hasta 3 intentos. Error permanente: `fallida` con su código. Límite diario de Meta: reprograma y avisa al administrador. `worker.py` elige el proveedor según `NOTIFICACIONES_PROVEEDOR`. Hay que fijar el ritmo de ejecución: los docs dicen "cada minuto" y "cada 5 minutos".
+- [ ] **F3.05 · Worker de envío** — `envio.py`: toma un lote vencido con `FOR UPDATE SKIP LOCKED`, comprueba que siga aplicando (la cita activa; "sin confirmar" solo si sigue `pendiente`), arma la plantilla, la envía, guarda el `wamid` y pasa a `enviada`. Error temporal: vuelve a `pendiente` unos minutos después, hasta 3 intentos. Error permanente: `fallida` con su código. Límite diario de Meta: reprograma y avisa al administrador. `worker.py` elige el proveedor según `NOTIFICACIONES_PROVEEDOR` y corre cada minuto (doc 04 §5.2).
   *Cubre:* RNF-06, RNF-07, RNF-17, CU-13 · *Listo cuando:* con `ConsolaProvider`, dos workers a la vez no envían nunca el mismo mensaje y una notificación sale dentro de los 5 minutos de su hora.
 - [ ] **F3.06 · Resumen diario del barbero** — a la hora configurada por cada barbero, el worker programa su resumen del día.
   *Cubre:* RF-19 (prioridad S) · *Listo cuando:* un barbero con `recibe_avisos` recibe su resumen a la hora que eligió.
@@ -363,6 +364,9 @@ Una línea por avance, con el ID del paso. Lo más reciente arriba.
 
 | Fecha | Paso | Nota |
 |---|---|---|
+| 2026-11-14 | F0.07 | `core/errores.py` (`ErrorDominio` y `registrar_errores`; cuerpo `{codigo, mensaje, datos?}`) y `core/logs.py` (`FormatoJSON`, que enmascara todo E.164 en la línea completa, tracebacks incluidos; `registrar_peticiones`, con el ID de petición, una línea por petición con la plantilla de ruta y el 500 genérico; `configurar_logs`, que apaga el access log de uvicorn). `conftest.py` en la raíz de `apps/api` (no en `tests/`: así lo ven las pruebas de los dominios) con la fixture `con` y la marca `integracion`. La CI corre las de integración en `base-de-datos`. Verificado con uvicorn real: los logs salen en JSON y el token no aparece en la ruta. |
+| 2026-11-14 | F0.05 | `supabase start`, `db reset` y `test db` sin errores con el CLI 3.0.0: la migración aplica en el Postgres de Supabase y pasan las 8 pruebas pgTAP. No hizo falta cambiar nada. |
+| 2026-11-14 | Decisiones | Cerradas las preguntas abiertas del plan: casilla obligatoria de consentimiento (RF-06), login sin crear usuarios (F0.10), worker cada minuto (RNF-06), web en Railway desde la raíz del repo, ADR-0007 aceptada (P-02) y diseño de F0.07. Sigue abierta P-01. |
 | 2026-11-14 | F1.02 (parcial) | `shared/telefono.py`: `normalizar` a E.164 con los mismos casos que `apps/web/lib/telefono.ts`; usa `[0-9]` porque en Python `\d` acepta dígitos Unicode. Falta `clientes.registrar` y los consentimientos (necesitan la base). |
 | 2026-11-14 | F1.03 | `agenda/rules.py`: `puede_pasar` (RN-08; "no vino" solo desde la hora de inicio), `puede_cancelar` (RN-06; el cliente puede justo en el límite, `miembro` siempre, cualquier otro actor nunca) y `primero_disponible` (RN-05, recibe un `Candidato` por barbero; empate total por `miembro_id`). Pruebas de tabla que recorren los 25 pares de estados y los desempates. La corrección de atendida/no vino en 24 h quedó decidida en el doc 01 (desde el inicio, solo entre esos dos estados, solo el dueño) y se implementa en F2.03. |
 | 2026-11-14 | F0.03 (parcial) | PR #1 fusionado. `ci-web` en verde; `ci-api` falla en `supabase start` (job `base-de-datos`). El PDF del diseño queda versionado en `front-interface/`. |
