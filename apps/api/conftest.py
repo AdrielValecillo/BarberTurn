@@ -3,12 +3,16 @@
 Vive en la raíz de apps/api para que lo vean también las pruebas de cada dominio (app/domains/*/tests).
 """
 
+import os
 from collections.abc import AsyncIterator
 
 import asyncpg
 import pytest
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
+
+# `.env` puede apuntar a la nube: las pruebas usan la base local (o la DATABASE_URL del entorno), nunca la de `.env`.
+os.environ.setdefault("DATABASE_URL", Settings.model_fields["database_url"].default)
 
 
 @pytest.fixture
