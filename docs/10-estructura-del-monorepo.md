@@ -486,3 +486,11 @@ Antes del primer commit, cambia el nombre del paquete de tipos a `@turnero/api-t
 | `worker` | `apps/api` | `Dockerfile` | `python -m app.worker` | `apps/api/**` |
 
 La web usa la raíz del repo porque depende de `packages/api-types` (`workspace:*`): con la carpeta raíz `apps/web`, Railway no vería ese paquete y el build fallaría. La API y el worker usan el mismo `Dockerfile`; solo cambia el comando de inicio. Las rutas que despliegan evitan que un cambio en la web redespliegue el backend, y al revés.
+
+La configuración vive en los ajustes de cada servicio de Railway (proyecto `turnero`), no en el repo: Railway ya no acepta `railway.json` en servicios nuevos. Detalles:
+
+- No hay builder "Dockerfile": Railway lo usa solo cuando encuentra un `Dockerfile` en la carpeta raíz del servicio. Por eso `api` no tiene comando de inicio propio y usa el `CMD` del `Dockerfile`.
+- Las rutas que despliegan se escriben desde la raíz del repo aunque el servicio tenga carpeta raíz (`/apps/api/**`).
+- Chequeo de salud: `/health` en `api` y `/` en `web`. El `worker` no tiene.
+- Variables: `api` lleva `DATABASE_URL` (*Session pooler* de Supabase), `SUPABASE_URL`, `NOTIFICACIONES_PROVEEDOR` y `WEB_ORIGIN=https://${{web.RAILWAY_PUBLIC_DOMAIN}}`. `worker` referencia las de `api` (`${{api.DATABASE_URL}}`). `web` lleva `NEXT_PUBLIC_API_URL=https://${{api.RAILWAY_PUBLIC_DOMAIN}}`, `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_KEY`. Las `NEXT_PUBLIC_*` se incrustan al compilar: si cambian, la web se vuelve a desplegar.
+- `railway environment edit --service-config` (CLI 5.74) responde "No changes to apply" sin cambiar nada. Los ajustes del servicio se cambian en el panel o con la API GraphQL (`serviceInstanceUpdate`). Las variables sí funcionan con `railway variable set`.
