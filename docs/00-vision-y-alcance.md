@@ -110,13 +110,14 @@ Cada una se documentará como ADR en `docs/adr/`.
 | D-04 | Panel del barbero como PWA (web instalable). | Sin tiendas de apps, un solo código. |
 | D-05 | PostgreSQL (propuesto: Supabase) con aislamiento por barbería mediante RLS. | Restricciones fuertes en la base (anti-doble reserva), auth y tiempo real incluidos. |
 | D-06 | El envío de notificaciones pasa por una interfaz propia (`NotificationService`). | Permite desarrollar sin WhatsApp y cambiar de proveedor sin reescribir. |
+| D-07 | Stack: Next.js (web), FastAPI (API y worker) y Railway (ADR-0007). Cierra P-02. | Experiencia previa y un worker que corre permanentemente. |
 
 ## 8. Decisiones pendientes
 
 | # | Pregunta | Fecha límite sugerida |
 |---|---|---|
 | P-01 | Nombre comercial definitivo y dominio. | Antes de registrar el número en Meta (el nombre visible debe coincidir con la web). |
-| P-02 | Framework y lenguaje del backend y frontend. | Antes de la fase 1. |
+| ~~P-02~~ | ~~Framework y lenguaje del backend y frontend.~~ | Resuelta en D-07 (2026-11-14). |
 | P-03 | Hosting de producción (plan pago o VPS). | Antes del piloto. |
 | P-04 | Modelo de precios para las barberías. | Antes del piloto. |
 | P-05 | Valores por defecto de las reglas de reserva (anticipación, límite de cancelación). | Validar con las barberías del piloto. |

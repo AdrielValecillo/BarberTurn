@@ -100,21 +100,6 @@ Cada tabla tiene un **dominio dueño**: solo ese dominio escribe en ella ([doc 1
 | notificaciones | `notificaciones` | Bandeja de salida de mensajes de WhatsApp y su estado de entrega. | RF-13 a RF-20 |
 | mensajeria | `whatsapp_eventos` | Bandeja de entrada del webhook, cruda, para deduplicar y depurar. | RF-16, RF-17 |
 
----|---|---|
-| `barberias` | El negocio (tenant): datos públicos y reglas de reserva. | RF-01, RF-32, RF-36, RF-41 |
-| `miembros` | Personal de la barbería (dueño o barbero), vinculado a un usuario de autenticación. | RF-22, RF-34 |
-| `servicios` | Catálogo de servicios con duración y precio. | RF-02, RF-33 |
-| `miembro_servicios` | Qué servicios presta cada barbero (N a N). | RF-03, RF-34 |
-| `horarios` | Franjas semanales de trabajo de cada barbero. | RF-04, RF-35 |
-| `bloqueos` | Ausencias de un barbero o cierres de toda la barbería. | RF-29, RF-40 |
-| `clientes` | Clientes de cada barbería, identificados por teléfono. | RF-05, RF-38, RN-10 |
-| `consentimientos` | Historial de autorizaciones (datos y marketing). Es la prueba ante la Ley 1581. | RF-06, RF-07, RN-12 |
-| `citas` | Las reservas. Contiene la restricción anti-solape. | RF-05, RF-10 a RF-12, RF-27, RF-28 |
-| `cita_eventos` | Historial de cada cita: creada, confirmada, reagendada, cancelada… | RF-26, RF-27 |
-| `notificaciones` | Bandeja de salida de mensajes de WhatsApp y su estado de entrega. | RF-13 a RF-20 |
-| `whatsapp_eventos` | Bandeja de entrada del webhook, cruda, para deduplicar y depurar. | RF-16, RF-17 |
-| `admins_plataforma` | Usuarios con acceso de administración del SaaS. | RF-41, RF-42 |
-
 ---
 
 ## 4. Esquema completo (SQL)
@@ -681,7 +666,9 @@ Todo ocurre en **una sola transacción** en el backend:
 
 **Carrera entre dos clientes:** si otro cliente tomó el turno entre el paso 2 y el 5, el `insert` falla con el código `23P01` (`exclusion_violation`) de la restricción `citas_sin_solape`. El backend lo captura y responde "Ese horario se acaba de ocupar" con los turnos actualizados.
 
-### 5.2 Proceso de envío (cron cada 5 minutos)
+### 5.2 Proceso de envío (cada minuto)
+
+El worker corre cada minuto (CU-13, doc 03): con un ciclo de 5 minutos, el lote y los reintentos podrían incumplir RNF-06. El comentario "cada 5 minutos" del índice en el SQL de §4 es de la migración inicial y no se edita.
 
 Toma un lote de notificaciones vencidas sin que dos procesos tomen la misma:
 

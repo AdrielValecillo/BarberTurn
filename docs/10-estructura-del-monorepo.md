@@ -224,8 +224,8 @@ apps/api/
 │           │   └── webhook.py          # GET y POST /webhooks/whatsapp
 │           └── tests/
 ├── tests/
-│   ├── conftest.py                     # Base de prueba con las migraciones aplicadas
 │   └── integration/                    # Flujos de punta a punta entre dominios (CU-01, CU-05…)
+├── conftest.py                         # Base de prueba (fixture `con`); en la raíz para que la vean todos los tests/
 ├── Dockerfile                          # La misma imagen sirve para la API y el worker
 ├── pyproject.toml                      # Incluye los contratos de import-linter
 ├── uv.lock
@@ -234,7 +234,7 @@ apps/api/
 
 **Capas dentro de cada dominio:** `routes → service → repo`, con la lógica pura en `rules.py` y las lecturas para pantallas en `queries.py`. Otro dominio solo usa lo que este expone en `__init__.py`.
 
-**Pruebas junto a cada dominio:** las unitarias viven en `domains/<dominio>/tests/`; las que cruzan varios dominios, en `tests/integration/`.
+**Pruebas junto a cada dominio:** las unitarias viven en `domains/<dominio>/tests/`; las que cruzan varios dominios, en `tests/integration/`. Toda prueba que usa la base (la fixture `con`, una transacción que se deshace al terminar, contra el Supabase local) lleva `@pytest.mark.integracion`; sin la marca, la fixture falla. En la CI, el job `api` corre `pytest -m "not integracion"` y el job `base-de-datos` corre `pytest -m integracion` después de `supabase start`.
 
 **SQL explícito con asyncpg, sin ORM:** las piezas clave del sistema (restricción de exclusión, RLS, `FOR UPDATE SKIP LOCKED`, `turnos_disponibles`) son de PostgreSQL. Escribirlas en SQL directo es más claro que pelear con un ORM.
 
@@ -480,10 +480,10 @@ Antes del primer commit, cambia el nombre del paquete de tipos a `@turnero/api-t
 
 ## 11. Despliegue en Railway
 
-| Servicio de Railway | Carpeta raíz | Comando de inicio |
-|---|---|---|
-| `web` | `apps/web` | `pnpm start` |
-| `api` | `apps/api` | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
-| `worker` | `apps/api` | `python -m app.worker` |
+| Servicio de Railway | Carpeta raíz | Comando de build | Comando de inicio | Rutas que despliegan |
+|---|---|---|---|---|
+| `web` | raíz del repo | `pnpm install --frozen-lockfile && pnpm --filter web build` | `pnpm --filter web start` | `apps/web/**`, `packages/**` |
+| `api` | `apps/api` | `Dockerfile` | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` | `apps/api/**` |
+| `worker` | `apps/api` | `Dockerfile` | `python -m app.worker` | `apps/api/**` |
 
-La API y el worker usan el mismo `Dockerfile`; solo cambia el comando de inicio. Configura en cada servicio las rutas que deben disparar un despliegue (`apps/web/**` para la web, `apps/api/**` para la API y el worker), así un cambio en la web no redespliega el backend.
+La web usa la raíz del repo porque depende de `packages/api-types` (`workspace:*`): con la carpeta raíz `apps/web`, Railway no vería ese paquete y el build fallaría. La API y el worker usan el mismo `Dockerfile`; solo cambia el comando de inicio. Las rutas que despliegan evitan que un cambio en la web redespliegue el backend, y al revés.

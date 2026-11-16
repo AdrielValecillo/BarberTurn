@@ -22,7 +22,8 @@ jobs:
       - run: uv run ruff check .
       - run: uv run mypy app
       - run: uv run lint-imports
-      - run: uv run pytest
+      # Las de integración necesitan Supabase: corren en el job base-de-datos.
+      - run: uv run pytest -m "not integracion"
       # Obliga a regenerar los tipos de la web en el mismo cambio (make gen-types).
       - name: openapi.json al día
         run: |
@@ -38,3 +39,11 @@ jobs:
           version: 3.0.0 # la misma del package.json; sin esto instala una vieja que no lee config.toml
       - run: supabase start
       - run: supabase test db
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: pruebas de integración de la API
+        working-directory: apps/api
+        run: |
+          uv sync --frozen
+          uv run pytest -m integracion

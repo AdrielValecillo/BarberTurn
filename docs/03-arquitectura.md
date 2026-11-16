@@ -20,7 +20,7 @@ Los atributos de calidad que más pesan, en orden:
 
 ## 2. Stack
 
-Propuesta formal en [ADR-0007](adr/0007-stack-nextjs-fastapi-railway.md). Cierra la decisión pendiente P-02 cuando se acepte.
+Decisión en [ADR-0007](adr/0007-stack-nextjs-fastapi-railway.md), aceptada el 2026-11-14 (cierra P-02).
 
 | Capa | Tecnología | Por qué |
 |---|---|---|
@@ -351,7 +351,7 @@ turnero/
 | [0004](adr/0004-panel-como-pwa.md) | Panel como PWA | Aceptada |
 | [0005](adr/0005-supabase-como-base-auth-y-realtime.md) | Supabase para base de datos, autenticación y tiempo real | Aceptada |
 | [0006](adr/0006-interfaz-propia-de-notificaciones.md) | Interfaz propia para enviar notificaciones | Aceptada |
-| [0007](adr/0007-stack-nextjs-fastapi-railway.md) | Stack: Next.js, FastAPI y Railway | **Propuesta** |
+| [0007](adr/0007-stack-nextjs-fastapi-railway.md) | Stack: Next.js, FastAPI y Railway | Aceptada |
 | [0008](adr/0008-rls-por-peticion-en-el-panel.md) | RLS aplicada en cada petición del panel | Aceptada |
 | [0009](adr/0009-monolito-modular-por-dominios.md) | Monolito modular organizado por dominios | Aceptada |
 
