@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/public/barberias/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Obtener Barberia
+         * @description Con `servicio`, solo los barberos que lo prestan y su próximo turno para ese servicio (RF-03).
+         */
+        get: operations["obtener_barberia_public_barberias__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -24,7 +44,81 @@ export interface paths {
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        /** BarberiaPublica */
+        BarberiaPublica: {
+            /** Slug */
+            slug: string;
+            /** Nombre */
+            nombre: string;
+            /** Direccion */
+            direccion: string;
+            /** Zona */
+            zona: string;
+            /** Servicios */
+            servicios: components["schemas"]["ServicioPublico"][];
+            /** Barberos */
+            barberos: components["schemas"]["BarberoPublico"][];
+        };
+        /** BarberoPublico */
+        BarberoPublico: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nombre */
+            nombre: string;
+            /** Proximo Turno */
+            proximo_turno: string | null;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * RespuestaError
+         * @description Cuerpo de todo error de dominio. La web decide con `codigo`; `mensaje` se puede mostrar tal cual.
+         */
+        RespuestaError: {
+            /** Codigo */
+            codigo: string;
+            /** Mensaje */
+            mensaje: string;
+            /** Datos */
+            datos?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** ServicioPublico */
+        ServicioPublico: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Nombre */
+            nombre: string;
+            /** Duracion Min */
+            duracion_min: number;
+            /** Precio Cop */
+            precio_cop: number;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -33,6 +127,48 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    obtener_barberia_public_barberias__slug__get: {
+        parameters: {
+            query?: {
+                servicio?: string | null;
+            };
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BarberiaPublica"];
+                };
+            };
+            /** @description No existe o está suspendida (CU-01 1a) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RespuestaError"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;

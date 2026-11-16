@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 import asyncpg
+from fastapi import Request
 
 # `type` se evalúa de forma perezosa: no hace falta que asyncpg sea subscriptable en tiempo de ejecución.
 type Pool = asyncpg.Pool[asyncpg.Record]
@@ -18,6 +19,12 @@ async def crear_pool(dsn: str) -> Pool:
 async def transaccion_servicio(pool: Pool) -> AsyncIterator[Conexion]:
     """Conexión de servicio: salta la RLS. Toda consulta debe filtrar por barberia_id (público y admin)."""
     async with pool.acquire() as con, con.transaction():
+        yield con
+
+
+async def conexion_servicio(request: Request) -> AsyncIterator[Conexion]:
+    """Dependencia de las rutas /public/*: una transacción de servicio por petición (las pruebas la sustituyen)."""
+    async with transaccion_servicio(request.app.state.pool) as con:
         yield con
 
 

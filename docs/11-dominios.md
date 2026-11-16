@@ -263,7 +263,7 @@ app/domains/agenda/
 | `rules.py` | `models.py`, `shared/` | Base de datos, red, otros dominios |
 | `service.py` | Todo su dominio, `core/`, `shared/`, la API pública de dominios de abajo | El `repo.py` de otro dominio |
 | `repo.py`, `queries.py` | `core/db.py`, `models.py` | Lógica de negocio |
-| `routes/` | `service.py`, `schemas.py`, `core/auth.py`, `barberias.miembro_actual` | `repo.py` directamente |
+| `routes/` | `service.py`, `schemas.py`, `core/auth.py`, `core/db.py` (la dependencia de conexión), `core/errores.py` (`RespuestaError` para documentar errores), `barberias.miembro_actual` | `repo.py` directamente |
 
 Particularidades de cada dominio, además de esa forma base:
 
