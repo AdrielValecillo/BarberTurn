@@ -1,8 +1,6 @@
-// Datos de demostración con el contenido del diseño (front-interface/). Se borra cuando api.ts use la API real.
+// Datos de demostración del panel con el contenido del diseño (front-interface/). Se borra con F2.01 y F2.02.
 import { claveDia, sumarDias } from "@/lib/fechas";
-import type { AgendaDia, Barberia, CitaAgenda, CitaDetalle, EstadoCita, NuevaCita, Servicio, Turno } from "./api";
-
-const SLUG = "barberia-norte";
+import type { AgendaDia, CitaAgenda, CitaDetalle, EstadoCita, Servicio } from "./api";
 
 const SERVICIOS: Servicio[] = [
   { id: "corte", nombre: "Corte clásico", duracionMin: 30, precioCop: 25000 },
@@ -22,44 +20,6 @@ export const BARBEROS = [
 // La demo asume Bogotá (UTC-5, sin horario de verano); la API real convierte con la zona de la barbería.
 const en = (dia: string, hhmm: string) => new Date(`${dia}T${hhmm}:00-05:00`).toISOString();
 const hoy = () => claveDia(new Date());
-
-/** Grilla fija cada 45 min de 9:00 a. m. a 7:30 p. m., con huecos ocupados que no cambian al recargar. */
-export function turnos(barbero: string, dia: string, ahora = new Date()): Turno[] {
-  const fecha = new Date(`${dia}T12:00:00Z`);
-  if (fecha.getUTCDay() === 0) return []; // domingo cerrado
-  const candidatos = BARBEROS.filter((b) => barbero === "primero" || b.id === barbero);
-  const libres: Turno[] = [];
-  for (let k = 0; k < 15; k++) {
-    const minutos = 9 * 60 + k * 45;
-    const hhmm = `${String(Math.floor(minutos / 60)).padStart(2, "0")}:${String(minutos % 60).padStart(2, "0")}`;
-    const inicio = en(dia, hhmm);
-    if (new Date(inicio).getTime() < ahora.getTime() + 30 * 60_000) continue;
-    const libre = candidatos.find((b) => (k + BARBEROS.indexOf(b) * 2 + fecha.getUTCDate()) % 4 !== 0);
-    if (libre) libres.push({ inicio, barberoId: libre.id });
-  }
-  return libres;
-}
-
-export function barberia(slug: string): Barberia | null {
-  if (slug !== SLUG) return null;
-  const dias = Array.from({ length: 7 }, (_, i) => sumarDias(hoy(), i));
-  return {
-    slug,
-    nombre: "Barbería Norte",
-    direccion: "Calle 10 # 5-23",
-    zona: "America/Bogota",
-    servicios: SERVICIOS,
-    barberos: BARBEROS.map((b) => ({
-      ...b,
-      proximoTurno: dias.flatMap((dia) => turnos(b.id, dia))[0]?.inicio ?? null,
-    })),
-  };
-}
-
-export function crearCita(cita: NuevaCita) {
-  void cita;
-  return { token: "demo" };
-}
 
 // Agenda de Carlos para hoy, como en el diseño.
 const CITAS: [hora: string, cliente: string, servicio: string, estado: EstadoCita][] = [

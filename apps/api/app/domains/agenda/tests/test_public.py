@@ -1,15 +1,11 @@
 """F1.01 · GET /public/barberias/{slug} contra el seed (RF-01, RF-03, RN-16, CU-01)."""
 
-from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import asyncpg
 import httpx
 import pytest
-
-from app.core.db import conexion_servicio
-from app.main import app
 
 pytestmark = pytest.mark.integracion
 
@@ -24,17 +20,6 @@ BARBA = UUID("00000000-0000-4000-8000-00000000c002")  # 20 min
 CORTE_Y_BARBA = UUID("00000000-0000-4000-8000-00000000c003")
 
 
-@pytest.fixture
-async def cliente(con: Con) -> AsyncIterator[httpx.AsyncClient]:
-    # La ruta usa la misma transacción de la prueba, así lo que inserta la prueba se deshace al final.
-    app.dependency_overrides[conexion_servicio] = lambda: con
-    try:
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as c:
-            yield c
-    finally:
-        app.dependency_overrides.clear()
-
-
 async def test_devuelve_la_barberia_del_seed_con_servicios_y_barberos_en_orden(cliente: httpx.AsyncClient) -> None:
     respuesta = await cliente.get("/public/barberias/barberia-norte")
 
@@ -44,6 +29,7 @@ async def test_devuelve_la_barberia_del_seed_con_servicios_y_barberos_en_orden(c
     assert cuerpo["nombre"] == "Barbería Norte"
     assert cuerpo["direccion"] == "Calle 85 #15-20, Bogotá"
     assert cuerpo["zona"] == "America/Bogota"
+    assert cuerpo["telefono_contacto"] == "+573001112233"  # CU-01 5a: contacto si no hay turnos
     assert cuerpo["servicios"] == [
         {"id": str(CORTE), "nombre": "Corte", "duracion_min": 30, "precio_cop": 25000},
         {"id": str(BARBA), "nombre": "Barba", "duracion_min": 20, "precio_cop": 15000},

@@ -75,6 +75,165 @@
         }
       }
     },
+    "/public/barberias/{slug}/turnos": {
+      "get": {
+        "tags": [
+          "público"
+        ],
+        "summary": "Obtener Turnos",
+        "description": "Turnos libres de `fecha` (local de la barbería). Sin `miembro` es \"el primero disponible\" (RN-05).\n\nUn servicio o barbero que no es de la barbería, o que no se prestan entre sí, da una lista vacía.",
+        "operationId": "obtener_turnos_public_barberias__slug__turnos_get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Slug"
+            }
+          },
+          {
+            "name": "servicio",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Servicio"
+            }
+          },
+          {
+            "name": "fecha",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "title": "Fecha"
+            }
+          },
+          {
+            "name": "miembro",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Miembro"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TurnoPublico"
+                  },
+                  "title": "Response Obtener Turnos Public Barberias  Slug  Turnos Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No existe o está suspendida (CU-01 1a)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/public/citas": {
+      "post": {
+        "tags": [
+          "público"
+        ],
+        "summary": "Crear Cita",
+        "description": "CU-01 · Reserva sin cuenta. El token se devuelve solo esta vez.",
+        "operationId": "crear_cita_public_citas_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NuevaCitaPublica"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitaCreadaPublica"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "La barbería no existe o está suspendida (RN-16)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "`turno_ocupado` (CU-01 9a), `maximo_citas` (9b) o `seleccion_no_disponible`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "`telefono_invalido` (CU-01 8a) o datos inválidos (sin aceptar la política, RF-06)"
+          },
+          "429": {
+            "description": "Límite de reservas por IP (CU-01 9c)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -114,6 +273,17 @@
             "type": "string",
             "title": "Direccion"
           },
+          "telefono_contacto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Telefono Contacto"
+          },
           "zona": {
             "type": "string",
             "title": "Zona"
@@ -138,6 +308,7 @@
           "slug",
           "nombre",
           "direccion",
+          "telefono_contacto",
           "zona",
           "servicios",
           "barberos"
@@ -176,6 +347,19 @@
         ],
         "title": "BarberoPublico"
       },
+      "CitaCreadaPublica": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "CitaCreadaPublica"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -188,6 +372,61 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "NuevaCitaPublica": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "servicio_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Servicio Id"
+          },
+          "miembro_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Miembro Id"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Inicio"
+          },
+          "nombre": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Nombre"
+          },
+          "telefono": {
+            "type": "string",
+            "maxLength": 30,
+            "title": "Telefono"
+          },
+          "acepta_politica": {
+            "type": "boolean",
+            "const": true,
+            "title": "Acepta Politica"
+          },
+          "acepta_marketing": {
+            "type": "boolean",
+            "title": "Acepta Marketing",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "servicio_id",
+          "miembro_id",
+          "inicio",
+          "nombre",
+          "telefono",
+          "acepta_politica"
+        ],
+        "title": "NuevaCitaPublica"
       },
       "RespuestaError": {
         "properties": {
@@ -248,6 +487,26 @@
           "precio_cop"
         ],
         "title": "ServicioPublico"
+      },
+      "TurnoPublico": {
+        "properties": {
+          "inicio": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Inicio"
+          },
+          "miembro_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Miembro Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "inicio",
+          "miembro_id"
+        ],
+        "title": "TurnoPublico"
       },
       "ValidationError": {
         "properties": {

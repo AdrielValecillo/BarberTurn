@@ -24,13 +24,15 @@ type Props = {
   dia: string;
   hoy: string;
   turnos: Turno[];
+  /** CU-01 9a: el turno elegido se ocupó mientras llenaba los datos. */
+  ocupado?: boolean;
 };
 
 const DIAS_VISIBLES = 14;
 const FRANJAS = ["Mañana", "Tarde", "Noche"];
 
 /** Paso 3 (RF-04): próximos días y turnos libres del día elegido, en mañana, tarde y noche. */
-export function GrillaTurnos({ barberia, servicio, barbero, dia, hoy, turnos }: Props) {
+export function GrillaTurnos({ barberia, servicio, barbero, dia, hoy, turnos, ocupado }: Props) {
   const [inicio, setInicio] = useState<string>();
   const elegido = turnos.find((t) => t.inicio === inicio);
   const seleccion = { servicio: servicio.id, barbero: barbero?.id ?? PRIMERO };
@@ -56,6 +58,8 @@ export function GrillaTurnos({ barberia, servicio, barbero, dia, hoy, turnos }: 
                 servicio: servicio.id,
                 barbero: elegido.barberoId,
                 inicio: elegido.inicio,
+                // Para que "atrás" y el 9a vuelvan a "el primero disponible" y no al barbero asignado.
+                eleccion: barbero ? undefined : PRIMERO,
               })
             }
           />
@@ -79,6 +83,12 @@ export function GrillaTurnos({ barberia, servicio, barbero, dia, hoy, turnos }: 
           </Link>
         ))}
       </nav>
+
+      {ocupado && (
+        <p className={estilos.nota} role="alert">
+          Ese horario se acaba de ocupar. Elige otra hora.
+        </p>
+      )}
 
       {turnos.length === 0 && <p className={estilos.nota}>No hay turnos libres este día. Prueba con otro.</p>}
 

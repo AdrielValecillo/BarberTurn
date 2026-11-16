@@ -38,15 +38,15 @@
 |---|---|
 | Base de datos | Esquema, seed y pruebas pgTAP verificados en el Supabase local (F0.05). En la nube: proyecto `turnero` (ref `wczylbxuqqkmufxwnaig`) con la migración y el seed; los `.env` locales de `apps/api` y `apps/web` apuntan a él (F0.13). |
 | Despliegue | Railway, proyecto `turnero` (región `iad`): `api` (https://api-production-48a80f43.up.railway.app), `worker` y `web` (https://web-production-ea4ae84f.up.railway.app), desplegados desde `main` contra Supabase en la nube (F0.13). |
-| API | Esqueleto (`/health`, bus de eventos, contexto RLS, errores de dominio, logs JSON, base de pruebas) y **un endpoint de negocio**: `GET /public/barberias/{slug}` (F1.01). `agenda` tiene además sus reglas puras (`rules.py`, F1.03); los otros 4 dominios están vacíos. |
-| Web | Las pantallas del diseño (`front-interface/`) están construidas con **datos de demostración**: reserva en 4 pasos, confirmación, agenda del día y detalle de cita. Ver el *Avance* de F1.12, F1.13, F2.12 y F2.13. |
+| API | Esqueleto (`/health`, bus de eventos, contexto RLS, errores de dominio, logs JSON, base de pruebas) y **la reserva pública**: `GET /public/barberias/{slug}` (F1.01), `GET /public/barberias/{slug}/turnos` (F1.04) y `POST /public/citas` (F1.05, con el límite por IP de F1.06). `clientes` registra clientes y consentimientos (F1.02). `barberias`, `notificaciones` y `mensajeria` están vacíos; nadie escucha todavía `CitaCreada`. |
+| Web | La **reserva en 4 pasos está conectada a la API** (F1.12). Siguen con **datos de demostración** la agenda del día y el detalle de cita (F2.12, F2.13). La confirmación espera el `.ics` (F1.13). |
 | Sesión del panel | No existe. `/panel/*` se abre sin iniciar sesión. |
-| CI | `ci-web` pasa. En `ci-api` el job `base-de-datos` fallaba en `supabase start`; el arreglo (CLI fijado en 3.0.0) entró por el PR #4 y falta verla en verde. Ver F0.03. |
-| Ramas | `main` tiene hasta el PR #5 (F0.07). F1.01 está en `feat/f1-01-datos-publicos`. |
+| CI | `ci-api` y `ci-web` en verde en `main` (F0.03). |
+| Ramas | `main` tiene hasta el PR #7 (F0.13). La reserva real (F1.02, F1.04 a F1.06, F1.12) está en `feat/f1-05-reserva-real`. |
 
 ### Cómo está conectada la web a los datos
 
-Las pantallas solo llaman a las funciones de `apps/web/domains/agenda/api.ts` y `apps/web/domains/notificaciones/api.ts`. Hoy esas funciones devuelven lo que arma `domains/agenda/demo.ts` (y una lista fija de avisos).
+Las pantallas solo llaman a las funciones de `apps/web/domains/agenda/api.ts` y `apps/web/domains/notificaciones/api.ts`. Las de la reserva (`obtenerBarberia`, `obtenerTurnos` y `crearCita`) ya usan la API. Las del panel (`obtenerEquipo`, `obtenerAgenda` y `obtenerCita`) devuelven lo que arma `domains/agenda/demo.ts`, y los avisos son una lista fija.
 
 Para conectar un endpoint:
 
@@ -56,24 +56,19 @@ Para conectar un endpoint:
 
 El contrato que esperan las pantallas está en los tipos de `api.ts`. Hay tres puntos fáciles de pasar por alto:
 
-- `Turno.barberoId`: con "El primero disponible" la API debe decir, en cada turno, qué barbero lo atiende (RN-05). La web lo pasa a la URL del paso 4.
-- La API responde en `snake_case` (`duracion_min`, `proximo_turno`) y `api.ts` lo convierte a los tipos de las pantallas.
-- `GET /public/barberias/{slug}` acepta `?servicio=`: con él solo devuelve a los barberos que lo prestan y calcula `proximo_turno` con su duración (RF-03). `cargarReserva` debe pasar el servicio de la URL. Un `servicio` que no es UUID responde 422.
-
-`obtenerBarberia` **todavía no está conectada**: la API devuelve IDs reales (UUID) y `demo.turnos` y `demo.crearCita` solo conocen los IDs de la demo ("carlos"), así que conectarla sola rompería los pasos 3 y 4. Se conecta junto con F1.04.
+- La API responde en `snake_case` (`duracion_min`, `miembro_id`) y `api.ts` lo convierte a los tipos de las pantallas.
+- Los errores de dominio llegan como `{codigo, mensaje, datos?}`: la pantalla decide con `codigo` y puede mostrar `mensaje` tal cual (así lo hace `crearCita`).
+- `NEXT_PUBLIC_API_URL` se fija **al compilar**: para probar la web contra la API local hay que compilar (o correr `next dev`) con `NEXT_PUBLIC_API_URL=http://localhost:8000`, porque `apps/web/.env` apunta a Railway.
 
 Las búsquedas de `shortcut:` en `apps/web` listan cada atajo pendiente.
 
 ### Siguientes pasos, en orden
 
-Es el camino crítico para que un cliente reserve de verdad. Las pruebas de integración necesitan Docker en ejecución (`make dev-db`).
+Un cliente ya reserva de verdad; esto es lo que falta para cerrar F1. Las pruebas de integración necesitan Docker en ejecución (`make dev-db`).
 
-1. **F0.03**: confirmar que `ci-api` pasa en verde: el CLI fijado en 3.0.0 y el job `base-de-datos`, que ahora también corre `pytest -m integracion`.
-2. **F1.04**, y conectar los pasos 1 a 3 de la reserva (`obtenerBarberia` y `obtenerTurnos`). F1.01 ya está hecho.
-3. **F1.02**: falta `clientes.registrar` y los consentimientos (la versión del texto es una constante del dominio). El teléfono (`shared/telefono.py`) y F1.03 ya están.
-4. **F1.05** y **F1.06**: conectar el paso 4 y los errores 9a, 9b y 9c (ver el *Avance* de F1.12).
-5. **F1.08**: el `.ics` (el botón de la confirmación ya apunta a esa ruta). Luego **F1.07** y **F1.14**: gestión con el token.
-6. **F1.09** y **F1.15**: aislamiento de `/public/*` y E2E con Playwright. **Cierran F1.**
+1. **F1.08**: el `.ics` (el botón de la confirmación ya apunta a esa ruta); cierra F1.13.
+2. **F1.07** y **F1.14**: gestión con el token (ver, reagendar y cancelar). Con F1.07 llegan `CitaReagendada` y `CitaCancelada`.
+3. **F1.09** y **F1.15**: aislamiento de `/public/*` y E2E con Playwright. **Cierran F1.**
 
 En paralelo, cuando haga falta el panel real: **F0.08**, **F0.10** y **F0.14** (sesión), y después **F2.01** a **F2.03** para conectar la agenda y el detalle.
 
@@ -125,8 +120,7 @@ F0 ──► F1 ──► F2 ──┐
   *Cubre:* RNF-16 · *Listo cuando:* los comandos del README corren (en Windows hace falta instalar `make`).
 - [x] **F0.02 · Primer commit y repositorio remoto** — revisar `git status`, hacer el primer commit (Conventional Commits) y subir `main` a GitHub.
   *Listo cuando:* el repo está en GitHub con el estado actual.
-- [ ] **F0.03 · Primera ejecución de la CI** — abrir un PR de prueba y corregir los workflows (`ci-api`, `ci-web`; nunca se han ejecutado, incluido el job que levanta `supabase start`).
-  ***Avance:*** ya corrieron. `ci-web` pasa (también en el PR #1). En `ci-api` el job `api` pasa y `base-de-datos` falla en el paso `supabase start`, desde el primer commit. Causa: `supabase/setup-cli@v1` sin `version` instala un CLI viejo que no entiende el `config.toml` generado con la 3.0.0 ("has invalid keys"). Se fijó `version: 3.0.0` en `ci-api` y `migraciones`; falta ver la CI en verde.
+- [x] **F0.03 · Primera ejecución de la CI** — abrir un PR de prueba y corregir los workflows (`ci-api`, `ci-web`; nunca se han ejecutado, incluido el job que levanta `supabase start`).
   *Cubre:* RNF-16 · *Listo cuando:* `ci-api` y `ci-web` pasan en verde.
 
 ### Base de datos
@@ -181,16 +175,15 @@ F0 ──► F1 ──► F2 ──┐
 
 - [x] **F1.01 · Datos públicos de la barbería** — `GET /public/barberias/{slug}`: nombre, dirección, servicios activos con duración y precio, y barberos que atienden con su próximo turno. Una barbería inexistente o suspendida responde "no disponible". Ojo con las capas: `barberias` no puede depender de `agenda`, así que el cálculo del "próximo turno" hace que este endpoint viva en `agenda/routes/public.py`.
   *Cubre:* RF-01, RF-03, RN-16, CU-01 · *Listo cuando:* devuelve los datos del seed y una prueba confirma que un slug nunca devuelve datos de otra barbería.
-- [ ] **F1.02 · Teléfono, clientes y consentimientos** — `shared/telefono.py` (normalizar a E.164, +57 por defecto), `clientes.registrar` (alta o actualización por `(barberia, teléfono)`, el nombre queda con el último usado) y registro de consentimientos con la versión del texto aceptado.
-  ***Avance:*** `shared/telefono.py` (`normalizar`) hecho, con los mismos casos que la web (solo celulares de Colombia; dígitos no ASCII rechazados). **Falta:** `clientes.registrar` y los consentimientos, que necesitan la base (F0.05, F0.07).
+- [x] **F1.02 · Teléfono, clientes y consentimientos** — `shared/telefono.py` (normalizar a E.164, +57 por defecto), `clientes.registrar` (alta o actualización por `(barberia, teléfono)`, el nombre queda con el último usado) y registro de consentimientos con la versión del texto aceptado.
   *Cubre:* RF-06, RF-07, RN-10 · *Listo cuando:* pruebas de tabla con varios formatos de teléfono; el mismo número en dos barberías crea dos clientes.
 - [x] **F1.03 · Reglas puras de la agenda** — `agenda/rules.py`: transiciones de estado (RN-08), elección del "primero disponible" (RN-05) y límite de cancelación (RN-06). Sin base ni red.
   *Cubre:* RN-05, RN-06, RN-08 · *Listo cuando:* pruebas de tabla que recorren cada flecha del diagrama de estados y los desempates de RN-05.
-- [ ] **F1.04 · Turnos disponibles** — `GET /public/barberias/{slug}/turnos?servicio&miembro&fecha` sobre `turnos_disponibles()`; sin `miembro` aplica "el primero disponible".
+- [x] **F1.04 · Turnos disponibles** — `GET /public/barberias/{slug}/turnos?servicio&miembro&fecha` sobre `turnos_disponibles()`; sin `miembro` aplica "el primero disponible".
   *Cubre:* RF-03, RF-04, RN-02 a RN-05, RNF-04 · *Listo cuando:* el ejemplo del doc 01 §4 (14:00, 14:15 y de 15:45 a 18:15) pasa como prueba de integración y la respuesta tarda menos de 500 ms.
-- [ ] **F1.05 · Crear cita** — `POST /public/citas`, en una sola transacción (doc 04 §5.1): validar barbería, servicio y que el barbero lo preste; validar el turno; registrar al cliente; máximo de citas futuras (RN-11); generar el token (32 bytes) y guardar solo su hash; insertar la cita con la copia del servicio; consentimientos; evento `creada`; publicar `CitaCreada`. El token en claro se devuelve una sola vez. Un `23P01` responde 409.
+- [x] **F1.05 · Crear cita** — `POST /public/citas`, en una sola transacción (doc 04 §5.1): validar barbería, servicio y que el barbero lo preste; validar el turno; registrar al cliente; máximo de citas futuras (RN-11); generar el token (32 bytes) y guardar solo su hash; insertar la cita con la copia del servicio; consentimientos; evento `creada`; publicar `CitaCreada`. El token en claro se devuelve una sola vez. Un `23P01` responde 409.
   *Cubre:* RF-05, RF-06, RN-01, RN-02, RN-10, RN-11, RN-13, RNF-05, RNF-10 · *Listo cuando:* una prueba lanza dos reservas simultáneas al mismo turno y exactamente una responde 201 y la otra 409.
-- [ ] **F1.06 · Límite de reservas por IP** — `core/limites.py` aplicado a `POST /public/citas`: máximo 5 por hora por IP. Con una sola instancia basta un contador en memoria; si la API se escala a varias, moverlo a la base.
+- [x] **F1.06 · Límite de reservas por IP** — `core/limites.py` aplicado a `POST /public/citas`: máximo 5 por hora por IP. Con una sola instancia basta un contador en memoria; si la API se escala a varias, moverlo a la base.
   *Cubre:* RN-11 · *Listo cuando:* la sexta reserva de una misma IP en una hora responde 429.
 - [ ] **F1.07 · Gestión con token** — `GET /public/citas/{token}` (busca por hash; un token inválido responde un mensaje genérico), turnos para reagendar sin contar la propia cita, `reagendar` (misma cita, vuelve a `pendiente`, evento `reagendada` con la hora anterior y la nueva, publica `CitaReagendada`) y `cancelar` (respeta RN-06, publica `CitaCancelada`).
   *Cubre:* RF-10 a RF-12, RF-20 (parte de agenda), RN-06, RN-08, CU-02 a CU-04 · *Listo cuando:* reagendar conserva ID y enlace; cancelar fuera del límite responde error; ambos liberan el turno.
@@ -205,12 +198,11 @@ F0 ──► F1 ──► F2 ──┐
   *Cubre:* RF-09, RNF-12, RNF-13 · *Listo cuando:* pruebas de Vitest con los ejemplos de formato del doc 01.
 - [x] **F1.11 · Componentes base** — `components/ui/`: botón, campo con etiqueta, chip de estado y barra de pasos. Móvil primero desde 360 px, objetivos táctiles de 44 px, contraste 4.5:1.
   *Cubre:* RNF-02, RNF-03 · *Listo cuando:* se usan en la reserva y se pueden operar con teclado.
-- [ ] **F1.12 · Reserva en 4 pasos** — rutas `/b/[slug]` → `barbero` → `hora` → `datos`, con el estado en la URL (`?servicio=…&barbero=…&fecha=…`) para que "atrás" y recargar funcionen. Incluye "Repetir mi último corte", los errores de teléfono inválido, de máximo de citas y de límite por IP, el aviso "Ese horario se acaba de ocupar" (vuelve a la hora sin borrar nombre ni teléfono) y la página "no disponible".
+- [x] **F1.12 · Reserva en 4 pasos** — rutas `/b/[slug]` → `barbero` → `hora` → `datos`, con el estado en la URL (`?servicio=…&barbero=…&fecha=…`) para que "atrás" y recargar funcionen. Incluye "Repetir mi último corte", los errores de teléfono inválido, de máximo de citas y de límite por IP, el aviso "Ese horario se acaba de ocupar" (vuelve a la hora sin borrar nombre ni teléfono) y la página "no disponible".
   *Cubre:* RF-01 a RF-09, CU-01, RNF-01 · *Listo cuando:* se completa una reserva real contra la API local.
-  ***Avance:*** hechos los 4 pasos en `domains/agenda/reserva/` con datos de demostración: estado en la URL, "Repetir mi último corte" y "Te atendió la última vez" (`lib/dispositivo.ts`), teléfono inválido (8a), "no disponible" (1a) y día sin turnos. **Falta:** conectar F1.01, F1.04 y F1.05; distinguir los errores de `crearCita`, que hoy muestran un solo mensaje genérico. Para 9a hay que volver al paso 3 sin perder nombre ni teléfono: hoy el formulario se rellena solo desde el dispositivo, así que hace falta guardarlos antes de salir. También faltan 9b (máximo de citas, sin mostrar detalles), 9c (límite por IP), 5a (sin turnos en toda la ventana: mostrar el contacto de la barbería) y las casillas de consentimiento al conectar F1.05 (RF-06): la de la política es obligatoria y está desmarcada, enlaza a `/privacidad` y deja "Confirmar" deshabilitado mientras no se marque; la de marketing es opcional y también está desmarcada. `/privacidad` queda como pantalla "pendiente" hasta F4.04. La versión del texto la registra la API con una constante del dominio `clientes`, no la web.
 - [ ] **F1.13 · Confirmación** — `/b/[slug]/listo`: resumen, "Agregar a mi calendario" (.ics), "Cómo llegar" (enlace de mapa) y guardado de los datos en el dispositivo.
   *Cubre:* RF-08, CU-01 paso 10 · *Listo cuando:* ambos botones funcionan en un celular.
-  ***Avance:*** pantalla hecha (`reserva/confirmacion.tsx`), con el guardado en el dispositivo. "Cómo llegar" abre Google Maps con la dirección. **Falta:** "Agregar a mi calendario" apunta a `{API}/public/citas/{token}/calendario.ics`, que no existe hasta F1.08. Hoy la página lee servicio, barbero, hora y token de la URL; con la API conviene leer la cita por el token, para no confiar en lo que trae la URL.
+  ***Avance:*** pantalla hecha (`reserva/confirmacion.tsx`), con el guardado en el dispositivo. "Cómo llegar" abre Google Maps con la dirección. **Falta:** "Agregar a mi calendario" apunta a `{API}/public/citas/{token}/calendario.ics`, que no existe hasta F1.08. Hoy la página lee servicio, barbero, hora y token de la URL; con F1.07 conviene leer la cita por el token, para no confiar en lo que trae la URL.
 - [ ] **F1.14 · Gestión de la cita** — `/c/[token]` (ver) y `/c/[token]/cambiar` (reagendar), cancelar con confirmación, modo solo lectura para citas canceladas o pasadas y, pasado el límite, el contacto de la barbería (wa.me) en lugar de los botones.
   *Cubre:* RF-10 a RF-12, CU-02 a CU-04 · *Listo cuando:* los tres flujos funcionan con la cita creada en F1.12.
   ***Avance:*** solo existe `/c/[token]` como pantalla de "pendiente". No hay diseño en `front-interface/`: reutiliza `Paso`, `GrillaTurnos` y la tarjeta de la confirmación.
@@ -369,6 +361,8 @@ Una línea por avance, con el ID del paso. Lo más reciente arriba.
 
 | Fecha | Paso | Nota |
 |---|---|---|
+| 2026-11-16 | F1.02, F1.04, F1.05, F1.06, F1.12 | **Reserva real de punta a punta.** `clientes.registrar`: alta o actualización por `(barbería, teléfono)` con el último nombre usado; consentimiento de datos con `VERSION_POLITICA` (provisional hasta F4.04) y de marketing solo si marcó la casilla (dejarla desmarcada no retira uno anterior). `GET /public/barberias/{slug}/turnos?servicio&fecha&miembro`: sin `miembro` junta los turnos de todos los que prestan el servicio y asigna cada hora con `rules.primero_disponible` (RN-05); la consulta filtra por barbería porque `turnos_disponibles()` no la mira. `POST /public/citas` sigue el doc 04 §5.1 salvo el paso 7 (notificaciones, F3.04): turno ocupado, fuera de la grilla o `23P01` → 409 `turno_ocupado`; barbero que no presta el servicio → 409 `seleccion_no_disponible`; RN-11 → 409 `maximo_citas` con cuántas tiene; publica `CitaCreada`. `core/limites.py`: ventana deslizante en memoria, 5 por hora; es una dependencia con `yield` que solo cuenta las reservas que se guardan (un 8a o un 9a no gastan cupo) y toma la IP del **último** valor de `X-Forwarded-For` (el que agrega el proxy de Railway; el primero lo puede inventar el cliente). `core/db.Conexion` acepta también una conexión directa (la de las pruebas). Las rutas públicas piden la conexión con `Depends(..., scope="function")`: con el scope por defecto, FastAPI 0.162 cierra las dependencias con `yield` **después** de enviar la respuesta, y el commit llegaría tarde. La validación de servicio y barbero es `barberias.servicio_prestado`; RN-11 no tiene carrera entre dos reservas del mismo cliente porque el upsert de `clientes` bloquea su fila hasta el commit. Revisión de código (estándares y spec) aplicada: también 9a con "el primero disponible" vuelve a esa elección (`?eleccion=primero`) y no pisa el último corte guardado en el dispositivo. Pruebas: el ejemplo del doc 01 §4, desempates de RN-05, aislamiento con dos barberías, la carrera real (dos reservas simultáneas dan un 201 y un 409, y otra fuerza el `23P01` con una transacción sin confirmar) y el 429. Web: `api.ts` conectado; casilla obligatoria de la política (`/privacidad` queda "pendiente" hasta F4.04); errores 8a, 9a (vuelve a la hora con `?ocupado=1` y conserva nombre y teléfono en el dispositivo), 9b y 9c con el mensaje de la API; 5a con el contacto de la barbería (la API expone `telefono_contacto`). Recorrido a mano contra la API local: reserva 201, mismo turno 409 y CORS desde `localhost:3000`. |
+| 2026-11-16 | F0.03 | `ci-api` (con `base-de-datos`) y `ci-web` en verde en `main` (commit `19ce4d4`). |
 | 2026-11-16 | F0.13 | Railway: proyecto `turnero` con `api`, `worker` y `web` desde `AdrielValecillo/BarberTurn` (`main`), configurados como en el doc 10 §11. La configuración vive en los ajustes de cada servicio, no en el repo: Railway ya no acepta `railway.json` en servicios nuevos. `railway environment edit --service-config` (CLI 5.74) no aplicaba cambios, así que se usó la API GraphQL (`serviceInstanceUpdate`). Variables: la API con `DATABASE_URL` (pooler), `SUPABASE_URL`, `NOTIFICACIONES_PROVEEDOR=consola` y `WEB_ORIGIN=https://${{web.RAILWAY_PUBLIC_DOMAIN}}`; el worker referencia las de la API; la web, `NEXT_PUBLIC_API_URL=https://${{api.RAILWAY_PUBLIC_DOMAIN}}` y la URL y llave publicable de Supabase. Verificado: `/health` y `GET /public/barberias/barberia-norte` responden desde Railway contra Supabase, CORS acepta el dominio de la web, la web responde 200 y el worker registra "worker iniciado". Railway marca los logs como error porque salen por stderr. |
 | 2026-11-16 | F0.03 | `base-de-datos` levantaba los 13 contenedores de Supabase y bajaba todas sus imágenes en cada ejecución. Ahora `supabase start` excluye todo menos db, auth y realtime, con un `-x` por contenedor (el CLI 3 ignora sin avisar la lista con comas). Verificado en local: arranca en 16 s, `db reset`, las 8 pruebas pgTAP y las 13 de integración pasan. `migraciones.yml` usaba `supabase db push` sin `--remote`, que en el CLI 3 apunta a la base local: ahora lleva `--remote --yes`. |
 | 2026-11-16 | F0.13 (parcial) | Proyecto de Supabase en la nube `turnero` (ref `wczylbxuqqkmufxwnaig`, `us-east-1`, plan gratuito, Postgres 17), creado con "Automatically expose new tables" activado: la migración cuenta con los permisos por defecto de `authenticated`. Migración inicial y seed subidos con `supabase db push --remote=<url> --include-seed`; el MCP confirma la versión `20261107000000`, las 13 tablas con RLS y `citas` en Realtime. La API se conecta por el *Session pooler* (`aws-0-us-east-1`, puerto 5432; la conexión directa solo es IPv6) y responde `/health` y `GET /public/barberias/barberia-norte` contra la nube. `conftest.py` fija `DATABASE_URL` a la base local para que las pruebas nunca usen la del `.env`. Asesores: ninguno bloqueante (ver "Preguntas abiertas"). Falta Railway. |

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { EnlaceBoton } from "@/components/ui/boton";
 import { Icono } from "@/components/ui/icono";
 import { Avatar, Chip } from "@/components/ui/piezas";
 import { useDispositivo } from "@/lib/dispositivo";
@@ -42,6 +43,18 @@ export function SelectorBarbero({ barberia, servicio, inicial, hoy }: Props) {
         </>
       }
     >
+      {/* CU-01 5a: nadie tiene turno libre en toda la ventana de reserva. */}
+      {!masCercano && (
+        <div className={estilos.nota} role="status">
+          <p>No hay turnos libres para {servicio.nombre.toLowerCase()} en los próximos días.</p>
+          {barberia.telefono && (
+            <EnlaceBoton variante="secundario" href={`https://wa.me/${barberia.telefono.replace("+", "")}`}>
+              Escribirle a la barbería
+            </EnlaceBoton>
+          )}
+        </div>
+      )}
+
       <div role="radiogroup" aria-label="Barbero">
         <label className={`${estilos.opcion} ${estilos.tarjeta}`}>
           <span className={estilos.circulo}>
